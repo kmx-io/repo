@@ -1,13 +1,20 @@
+;;
+;;  repo - source repository utilities
+;;
+;;  Copyright 2016-2017 Thomas de Grivel <thomas@lowh.net>
+;;
 
 (defpackage :repo
   (:use :common-lisp)
   (:export #:repo
-	   #:repo-install
-	   #:repo-update))
+	   #:install
+	   #:update))
 
 (in-package :repo)
 
 ;;  string functions
+
+(defvar *spaces* (coerce '(#\Space #\Tab) 'string))
 
 (defun string-starts-with (x string)
   (let ((lx (length x))
@@ -42,6 +49,9 @@
 	       (cons (apply 'str x))
 	       (t (prin1-to-string x)))))
     (apply 'concatenate 'string (mapcar #'to-str parts))))
+
+(defun kw (x)
+  (intern (string-upcase x) (find-package :keyword)))
 
 ;;  shell commands
 
@@ -98,6 +108,11 @@
     (t (setf (getf to (first add)) (first (rest add)))
        (plist-merge to (rest (rest add))))))
 
+;;  generic functions
+
+(defgeneric install (obj))
+(defgeneric update (obj))
+
 ;;  repository base class
 
 (defclass repo ()
@@ -120,15 +135,17 @@
 	     :reader repo-packages
 	     :type list)))
 
-(defgeneric repo-install (repo))
-(defgeneric repo-update (repo))
+(defgeneric repo-dir/name (repo))
+
+(defmethod repo-dir/name ((repo repo))
+  (str (repo-dir repo) "/" (repo-name repo)))
 
 (defmethod print-object ((obj repo) stream)
   (print-unreadable-object (obj stream :type t :identity t)
     (with-slots (dir name uri local-dir packages) obj
       (format stream "~A/~A ~S ~S ~S" dir name uri local-dir packages))))
 
-(defvar *repo-dir* "~/common-lisp")
+(defparameter *repo-dir* "~/common-lisp")
 
 (defmethod initialize-instance :after ((repo repo) &rest initargs)
   (declare (ignore initargs))
@@ -152,7 +169,7 @@
       (ensure-directories-exist parent :verbose t)
       (sh "cd " (sh-quote parent) " && git clone " (sh-quote url))))) 
 
-(defmethod repo-install ((repo git-repo))
+(defmethod install ((repo git-repo))
   (let ((local (repo-local-dir repo)))
     (unless (probe-dir local)
       (git-clone repo))))
@@ -163,9 +180,9 @@
       (error "git pull: ~S: no such file or directory" local))
     (sh "cd " (sh-quote local) " && git pull")))
 
-(defmethod repo-update ((repo git-repo))
-  (repo-install repo)
-  (git-pull repo))
+(defmethod update ((repo git-repo))
+  (when (probe-dir (repo-local-dir repo))
+    (git-pull repo)))
 
 ;;  github repository class
 
@@ -204,27 +221,35 @@
 (defvar *repo-uri-handlers*
   '(github-uri-handler))
 
-(defun repo (url &rest args &key packages &allow-other-keys)
+(defvar *repos* ())
+
+(defun clear-repos ()
+  (setf *repos* nil))
+
+(defun find-repo (uri)
+  (or (find uri *repos* :key 'repo-uri :test 'string=)
+      (if (position #\/ uri)
+	  (find uri *repos* :key 'repo-dir/name :test 'string=)
+	  (find uri *repos* :key 'repo-name :test 'string=))))
+
+(defun repo (uri &rest args &key packages &allow-other-keys)
   "Factory function for repository classes using *REPO-URI-HANDLERS*."
   (labels ((do-handlers (handlers)
 	     (when handlers
-	       (or (funcall (first handlers) url)
+	       (or (funcall (first handlers) uri)
 		   (do-handlers (rest handlers))))))
     (let ((spec (do-handlers *repo-uri-handlers*)))
       (when spec
 	(let* ((class (first spec))
 	       (initargs (rest spec))
-	       (kw (intern (string-upcase (getf initargs :name)) :keyword))
+	       (uri (getf initargs :uri))
+	       (kw (kw (getf initargs :name)))
 	       (initargs (plist-merge initargs args
-				      (list :packages
-					    (or packages (list kw))))))
-	  (apply 'make-instance class initargs))))))
-
-(defmethod repo-install ((uri string))
-  (repo-install (repo uri)))
-
-(defmethod repo-update ((uri string))
-  (repo-update (repo uri)))
+				      `(:packages ,(or packages `(,kw))))))
+	  (or (find-repo uri)
+	      (let ((repo (apply 'make-instance class initargs)))
+		(push repo *repos*)
+		repo)))))))
 
 (defmethod git-clone ((uri string))
   (git-clone (repo uri)))
@@ -232,4 +257,10 @@
 (defmethod git-pull ((uri string))
   (git-pull (repo uri)))
 
-(repo "github:thodg/repo-install")
+(defmethod install ((uri string))
+  (install (repo uri)))
+
+(defmethod update ((uri string))
+  (update (repo uri)))
+
+(repo "github:thodg/repo")
