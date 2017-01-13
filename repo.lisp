@@ -8,9 +8,14 @@
   (:use :common-lisp)
   (:export #:repo
 	   #:install
-	   #:update))
+	   #:update
+	   #:*repo-dir*
+	   #:*repos*
+	   #:clear-repos))
 
 (in-package :repo)
+
+(defvar *repo-dir* "~/common-lisp")
 
 ;;  string functions
 
@@ -96,7 +101,7 @@
 	    (write-char c out)))
 	(write-char #\" out))
       x))
-	
+
 ;;  property list functions
 
 (defun plist-merge (to add &rest more-lists)
@@ -145,8 +150,6 @@
     (with-slots (dir name uri local-dir packages) obj
       (format stream "~A/~A ~S ~S ~S" dir name uri local-dir packages))))
 
-(defparameter *repo-dir* "~/common-lisp")
-
 (defmethod initialize-instance :after ((repo repo) &rest initargs)
   (declare (ignore initargs))
   (with-slots (dir name) repo
@@ -167,7 +170,7 @@
       (error "git clone: not overwriting existing local directory~&~S" local))
     (let ((parent (dirname local)))
       (ensure-directories-exist parent :verbose t)
-      (sh "cd " (sh-quote parent) " && git clone " (sh-quote url))))) 
+      (sh "cd " (sh-quote parent) " && git clone " (sh-quote url)))))
 
 (defmethod install ((repo git-repo))
   (let ((local (repo-local-dir repo)))
