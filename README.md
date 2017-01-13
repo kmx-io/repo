@@ -1,6 +1,6 @@
 # repo
 
-Source repository utilities for Common Lisp.
+Common interface for version control systems.
 
 Repo along with Manifest allow you to use source repositories directly as
 ASDF-installable packages. Keep it synced with upstream for development

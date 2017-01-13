@@ -1,5 +1,6 @@
 ;;
-;;  repo - source repository utilities
+;;  repo  -  common interface for version control systems
+;;
 ;;  Copyright 2016-2017 Thomas de Grivel <thomas@lowh.net>
 ;;
 
@@ -12,7 +13,7 @@
   :name "repo"
   :author "Thomas de Grivel <thomas@lowh.net>"
   :version "0.1"
-  :description "source repository utilities"
+  :description "common interface for version control systems"
   :depends-on ()
   :components
   ((:file "repo")))

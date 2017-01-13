@@ -1,8 +1,10 @@
 ;;
-;;  repo - source repository utilities
+;;  repo  -  common interface for version control systems
 ;;
 ;;  Copyright 2016-2017 Thomas de Grivel <thomas@lowh.net>
 ;;
+
+(in-package :common-lisp-user)
 
 (defpackage :repo
   (:use :common-lisp)
