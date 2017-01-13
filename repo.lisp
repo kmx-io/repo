@@ -104,6 +104,12 @@
 	(write-char #\" out))
       x))
 
+(defun sh-quote-dir (x)
+  (let ((home (string-starts-with "~/" x)))
+    (if home
+	(str "~/" (sh-quote (subseq x home)))
+	(sh-quote x))))
+
 ;;  property list functions
 
 (defun plist-merge (to add &rest more-lists)
@@ -172,7 +178,7 @@
       (error "git clone: not overwriting existing local directory~&~S" local))
     (let ((parent (dirname local)))
       (ensure-directories-exist parent :verbose t)
-      (sh "cd " (sh-quote parent) " && git clone " (sh-quote url)))))
+      (sh "cd " (sh-quote-dir parent) " && git clone " (sh-quote url)))))
 
 (defmethod install ((repo git-repo))
   (let ((local (repo-local-dir repo)))
@@ -183,7 +189,7 @@
   (let ((local (repo-local-dir repo)))
     (unless (probe-dir local)
       (error "git pull: ~S: no such file or directory" local))
-    (sh "cd " (sh-quote local) " && git pull")))
+    (sh "cd " (sh-quote-dir local) " && git pull")))
 
 (defmethod update ((repo git-repo))
   (when (probe-dir (repo-local-dir repo))
@@ -204,7 +210,7 @@
 (defun github-url (user name)
   (format nil "http://github.com/~A/~A.git" user name))
 
-(defun github-uri-handler (uri)
+(defun github-repo-uri-handler (uri)
   (let ((start (or (string-starts-with "github:" uri)
 		   (string-starts-with "git://github.com/" uri)
 		   (string-starts-with "http://github.com/" uri)
@@ -224,7 +230,7 @@
 ;;  repo uri handler
 
 (defvar *repo-uri-handlers*
-  '(github-uri-handler))
+  '(github-repo-uri-handler))
 
 (defvar *repos* ())
 
@@ -256,16 +262,125 @@
 		(push repo *repos*)
 		repo)))))))
 
+(defun repo-or-die (x)
+  (or (repo x)
+      (error "unknown repository descriptor : ~S" x)))
+
 (defmethod git-clone ((uri string))
-  (git-clone (repo uri)))
+  (git-clone (repo-or-die uri)))
 
 (defmethod git-pull ((uri string))
-  (git-pull (repo uri)))
+  (git-pull (repo-or-die uri)))
 
-(defmethod install ((uri string))
-  (install (repo uri)))
+;;  repos list
 
-(defmethod update ((uri string))
-  (update (repo uri)))
+(defun repos-from-stream (stream)
+  (loop for line = (read-line stream nil)
+     while line
+     for spec = (string-trim *spaces* line)
+     unless (string-starts-with "#" spec)
+     collect (repo-or-die spec)))
 
-(repo "github:thodg/repo")
+(defun repos-from-file (pathname)
+  (with-open-file (in pathname :element-type 'character
+		      :external-format :utf-8)
+    (values (repos-from-stream in) (file-write-date in))))
+
+(defmethod install ((repos cons))
+  (map nil 'install repos))
+
+(defmethod update ((repos cons))
+  (map nil 'update repos))
+
+;;  manifest
+
+(defclass manifest ()
+  ((write-date :initarg :write-date
+	       :accessor manifest-write-date
+	       :type rational)
+   (dir :initarg :dir
+	:reader manifest-dir
+	:type string)
+   (repos :initarg :repos
+	  :accessor manifest-repos
+	  :type list)))
+
+(defgeneric manifest-file (manifest))
+(defgeneric reload-manifest (manifest))
+(defgeneric maybe-reload-manifest (manifest))
+
+(defmethod manifest-file ((manifest manifest))
+  (str (manifest-dir manifest) "/repo.manifest"))
+
+(defun manifest-from-file (pathname)
+  (multiple-value-bind (repos write-date)
+      (repos-from-file pathname)
+    (make-instance 'manifest
+		   :write-date write-date
+		   :dir (dirname pathname)
+		   :repos repos)))
+
+(defmethod reload-manifest ((manifest manifest))
+  (multiple-value-bind (repos write-date)
+      (repos-from-file (manifest-file manifest))
+    (setf (manifest-write-date manifest) write-date
+	  (manifest-repos manifest) repos))
+  manifest)
+
+(defmethod maybe-reload-manifest ((manifest manifest))
+  (if (< (manifest-write-date manifest)
+	 (file-write-date (manifest-file manifest)))
+      (reload-manifest manifest)
+      manifest))
+
+(defmethod install ((manifest manifest))
+  (let ((manifest (maybe-reload-manifest manifest)))
+    (let ((*repo-dir* (manifest-dir manifest))
+	  (*repos* (manifest-repos manifest)))
+      (install *repos*))))
+
+(defmethod update ((manifest manifest))
+  (let ((manifest (maybe-reload-manifest manifest)))
+    (let ((*repo-dir* (manifest-dir manifest))
+	  (*repos* (manifest-repos manifest)))
+      (update *repos*))))
+
+;;  manifest uri handlers
+
+(defun manifest-file-p (x)
+  (or (string= "repo.manifest" x)
+      (string-ends-with "/repo.manifest" x)))
+
+(defun local-manifest-uri-handler (x)
+  (let ((end (string-ends-with "/repo.manifest" x)))
+    (when end
+      (let* ((*repo-dir* (subseq x 0 end))
+	     (manifest (str *repo-dir* "/repo.manifest")))
+	(when (probe-file manifest)
+	  (manifest-from-file manifest))))))
+
+(defvar *manifest-uri-handlers*
+  '(local-manifest-uri-handler))
+
+(defun manifest (uri)
+  "Load manifest from uri"
+  (labels ((do-handlers (handlers)
+	     (unless (endp handlers)
+	       (or (funcall (first handlers) uri)
+		   (do-handlers (rest handlers))))))
+    (do-handlers *manifest-uri-handlers*)))
+
+(defun manifest-or-die (uri)
+  (or (manifest uri) (error "failed to load manifest ~S" uri)))
+
+;;  install and update commands
+
+(defmethod install ((x string))
+  (if (manifest-file-p x)
+      (install (manifest-or-die x))
+      (install (repo-or-die x))))
+
+(defmethod update ((x string))
+  (if (manifest-file-p x)
+      (update (manifest-or-die x))
+      (update (repo-or-die x))))
