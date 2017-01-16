@@ -187,8 +187,9 @@
     (when (probe-dir local)
       (error "git clone: not overwriting existing local directory~&~S" local))
     (let ((parent (dirname local)))
-      (ensure-directories-exist parent :verbose t)
-      (sh "cd " (sh-quote-dir parent) " && git clone " (sh-quote url)))))
+      (ensure-directories-exist (str parent "/") :verbose t)
+      (sh "cd " (sh-quote-dir parent) " && git clone " (sh-quote url))
+      nil)))
 
 (defmethod install ((repo git-repo))
   (let ((local (repo-local-dir repo)))
@@ -199,7 +200,8 @@
   (let ((local (repo-local-dir repo)))
     (unless (probe-dir local)
       (error "git pull: ~S: no such file or directory" local))
-    (sh "cd " (sh-quote-dir local) " && git pull")))
+    (sh "cd " (sh-quote-dir local) " && git pull")
+    nil))
 
 (defmethod update ((repo git-repo))
   (when (probe-dir (repo-local-dir repo))
