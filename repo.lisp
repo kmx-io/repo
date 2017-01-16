@@ -193,8 +193,9 @@
 
 (defmethod install ((repo git-repo))
   (let ((local (repo-local-dir repo)))
-    (unless (probe-dir local)
-      (git-clone repo))))
+    (if (probe-dir local)
+	(git-pull repo)
+	(git-clone repo))))
 
 (defmethod git-pull ((repo git-repo))
   (let ((local (repo-local-dir repo)))
