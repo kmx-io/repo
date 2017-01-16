@@ -63,12 +63,12 @@
 
 ;;  shell commands
 
-(defun sh (&rest parts)
-  (let ((cmd (str parts))
-	(out (make-string-output-stream))
+;;  TODO: run-program for all lisp implementations
+#+sbcl
+(defun run-program (cmd &rest args)
+  (let ((out (make-string-output-stream))
 	(err (make-string-output-stream)))
-    (format t "~&$ ~A~%" cmd)
-    (let* ((process (sb-ext:run-program "/bin/sh" `("-c" ,cmd)
+    (let* ((process (sb-ext:run-program cmd args
 					:output out
 					:error err
 					:external-format :utf-8))
@@ -77,10 +77,19 @@
       (close err)
       (let ((out (get-output-stream-string out))
 	    (err (get-output-stream-string err)))
-	(unless (= 0 exit-code)
-	  (with-simple-restart (continue "Ignore shell error")
-	    (error "$ ~A~%~A" cmd err))
-	  (values out err exit-code))))))
+	(values exit-code out err)))))
+
+#-windows
+(defun sh (&rest parts)
+  (let ((cmd (str parts)))
+    (format t "~&$ ~A~%" cmd)
+    (multiple-value-bind (exit-code out err) (run-program "/bin/sh" "-c" cmd)
+      (format t "~&~A~&" out)
+      (format t "~&~A~&" err)
+      (unless (= 0 exit-code)
+	(with-simple-restart (continue "Ignore shell error")
+	  (error "$ ~A~%~A" cmd err)))
+      (values out err exit-code))))
 
 (defvar *sh-unquoted-chars*
   "+,-./0123456789:=ABCDEFGHIJKLMNOPQRSTUVWXYZ^_abcdefghijklmnopqrstuvwxyz")
