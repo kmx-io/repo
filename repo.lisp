@@ -9,6 +9,7 @@
 (defpackage :repo
   (:use :common-lisp)
   (:export #:repo
+	   #:manifest
 	   #:install
 	   #:update
 	   #:*repo-dir*
