@@ -257,7 +257,7 @@
   (let ((local (repo-local-dir repo)))
     (unless (probe-dir local)
       (git-clone repo))
-    (asdf:load-asd (repo-asd repo))))
+    (asdf::load-asd (repo-asd repo))))
 
 (defmethod update ((repo git-repo))
   (when (probe-dir (repo-local-dir repo))
