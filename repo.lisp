@@ -8,13 +8,16 @@
 
 (defpackage :repo
   (:use :common-lisp)
-  (:export #:repo
-	   #:manifest
+  (:export #:boot
+	   #:clear-repos
+	   #:find-repo
 	   #:install
-	   #:update
+	   #:manifest
+	   #:*manifest*
+	   #:repo
 	   #:*repo-dir*
 	   #:*repos*
-	   #:clear-repos))
+	   #:update))
 
 (in-package :repo)
 
@@ -39,6 +42,19 @@
 	       (string= x string :start2 dl))
       dl)))
 
+(defun string-split (s x)
+  (let ((p (search s x)))
+    (if p
+	(cons (subseq x 0 p)
+	      (string-split s (subseq x (+ (length s) p))))
+	(cons x nil))))
+
+(defun first-line (x)
+  (let ((newline (position #\Newline x)))
+    (if newline
+	(subseq x 0 newline)
+	x)))
+
 (defun dirname (x)
   (let ((slash (position #\/ x :from-end t
 			 :end (or (string-ends-with "/" x) (length x)))))
@@ -55,17 +71,24 @@
 	       (string x)
 	       (null "")
 	       (cons (apply 'str x))
+	       (pathname (namestring x))
 	       (t (prin1-to-string x)))))
     (apply 'concatenate 'string (mapcar #'to-str parts))))
 
 (defun kw (x)
   (intern (string-upcase x) (find-package :keyword)))
 
+(defun translate-home (x)
+  (if (string-starts-with "~/" x)
+      (str (user-homedir-pathname) (subseq x 2))
+      x))
+
 ;;  shell commands
 
 ;;  TODO: run-program for all lisp implementations
 #+sbcl
 (defun run-program (cmd &rest args)
+  (format t "~&$ ~A~{ ~A~}~%" cmd args)
   (let ((out (make-string-output-stream))
 	(err (make-string-output-stream)))
     (let* ((process (sb-ext:run-program cmd args
@@ -77,19 +100,16 @@
       (close err)
       (let ((out (get-output-stream-string out))
 	    (err (get-output-stream-string err)))
-	(values exit-code out err)))))
+	(format t "~&~A~&" out)
+	(format t "~&~A~&" err)
+	(unless (= 0 exit-code)
+	  (with-simple-restart (continue "Ignore command error")
+	    (error "~&$ ~A~{ ~A~}~%~A" cmd args err)))
+	(values out err exit-code)))))
 
 #-windows
 (defun sh (&rest parts)
-  (let ((cmd (str parts)))
-    (format t "~&$ ~A~%" cmd)
-    (multiple-value-bind (exit-code out err) (run-program "/bin/sh" "-c" cmd)
-      (format t "~&~A~&" out)
-      (format t "~&~A~&" err)
-      (unless (= 0 exit-code)
-	(with-simple-restart (continue "Ignore shell error")
-	  (error "$ ~A~%~A" cmd err)))
-      (values out err exit-code))))
+  (run-program "/bin/sh" "-c" (str parts)))
 
 (defvar *sh-unquoted-chars*
   "+,-./0123456789:=ABCDEFGHIJKLMNOPQRSTUVWXYZ^_abcdefghijklmnopqrstuvwxyz")
@@ -145,6 +165,10 @@
    (name :initarg :name
 	 :reader repo-name
 	 :type string)
+   (head :initarg :head
+	 :initform nil
+	 :reader repo-head
+	 :type string)
    (uri :initarg :uri
 	:reader repo-uri
 	:type string)
@@ -158,10 +182,9 @@
 	     :reader repo-packages
 	     :type list)))
 
+(defgeneric repo-asd (repo &optional package))
 (defgeneric repo-dir/name (repo))
-
-(defmethod repo-dir/name ((repo repo))
-  (str (repo-dir repo) "/" (repo-name repo)))
+(defgeneric repo-package-p (x repo))
 
 (defmethod print-object ((obj repo) stream)
   (print-unreadable-object (obj stream :type t :identity t)
@@ -174,12 +197,41 @@
     (setf (slot-value repo 'local-dir)
 	  (format nil "~A/~A/~A" *repo-dir* dir name))))
 
+(defmethod repo-asd ((repo repo) &optional
+				   (package (first (repo-packages repo))))
+  (str (translate-home (repo-local-dir repo)) "/"
+       (string-downcase package) ".asd"))
+
+(defmethod repo-dir/name ((repo repo))
+  (str (repo-dir repo) "/" (repo-name repo)))
+
+(defmethod repo-package-p (x repo)
+  (find x (repo-packages repo) :test #'string-equal))
+
+;;  git command
+
+(defvar *git*
+  #+unix (or (probe-file "/usr/bin/git")
+	     (probe-file "/usr/local/bin/git")
+	     (first-line (sh "which git"))))
+
+(defun git (&rest args)
+  (apply 'run-program *git* args))
+
 ;;  git repository class
 
 (defclass git-repo (repo) ())
 
+(defgeneric git-checkout (repo))
 (defgeneric git-clone (repo))
+(defgeneric git-fetch (repo))
 (defgeneric git-pull (repo))
+
+(defmethod git-checkout ((repo git-repo))
+  (let ((local (repo-local-dir repo))
+	(head (repo-head repo)))
+    (git "-C" (translate-home local) "checkout" (str head))
+    nil))
 
 (defmethod git-clone ((repo git-repo))
   (let ((local (repo-local-dir repo))
@@ -188,25 +240,44 @@
       (error "git clone: not overwriting existing local directory~&~S" local))
     (let ((parent (dirname local)))
       (ensure-directories-exist (str parent "/") :verbose t)
-      (sh "cd " (sh-quote-dir parent) " && git clone " (sh-quote url))
+      (git "-C" (translate-home parent) "clone" url)
       nil)))
 
-(defmethod install ((repo git-repo))
+(defmethod git-fetch ((repo git-repo))
   (let ((local (repo-local-dir repo)))
-    (if (probe-dir local)
-	(git-pull repo)
-	(git-clone repo))))
+    (git "-C" (translate-home local) "fetch")
+    nil))
 
 (defmethod git-pull ((repo git-repo))
   (let ((local (repo-local-dir repo)))
-    (unless (probe-dir local)
-      (error "git pull: ~S: no such file or directory" local))
-    (sh "cd " (sh-quote-dir local) " && git pull")
+    (git "-C" (translate-home local) "pull")
     nil))
+
+(defmethod install ((repo git-repo))
+  (let ((local (repo-local-dir repo)))
+    (unless (probe-dir local)
+      (git-clone repo))
+    (asdf:load-asd (repo-asd repo))))
 
 (defmethod update ((repo git-repo))
   (when (probe-dir (repo-local-dir repo))
-    (git-pull repo)))
+    (git-fetch repo)
+    (git-checkout repo)))
+
+(defun git-repo-uri-handler (uri)
+  (let ((uri (first (string-split "#" uri))))
+    (let ((start (or (string-starts-with "git://" uri)
+		     (string-starts-with "http://" uri)
+		     (string-starts-with "https://" uri))))
+      (when start
+	(let* ((dot (search ".git" uri :from-end t))
+	       (slash (position #\/ uri :end dot :from-end t))
+	       (slash2 (position #\/ uri :end slash :from-end t))
+	       (dir (subseq uri (1+ slash2) slash))
+	       (name (subseq uri (1+ slash) dot)))
+	  `(git-repo :dir ,dir :name ,name
+		     :uri ,uri
+		     :url ,uri))))))
 
 ;;  github repository class
 
@@ -217,33 +288,37 @@
     (with-slots (dir name local-dir packages) obj
       (format stream "~A/~A ~S ~S" dir name local-dir packages))))
 
-(defun github-uri (user name)
-  (format nil "github:~A/~A" user name))
+(defun github-uri (user name &optional head package)
+  (str "github:" user "/" name
+       (when head "?") head
+       (when package "#") package))
 
 (defun github-url (user name)
-  (format nil "http://github.com/~A/~A.git" user name))
+  (str "http://github.com/" user "/" name ".git"))
 
 (defun github-repo-uri-handler (uri)
-  (let ((start (or (string-starts-with "github:" uri)
-		   (string-starts-with "git://github.com/" uri)
-		   (string-starts-with "http://github.com/" uri)
-		   (string-starts-with "https://github.com/" uri))))
-    (when start
-      (let* ((slash (or (position #\/ uri :start start)
-			(error "Invalid repo uri ~S" uri)))
-	     (dot (or (string-ends-with ".git/" uri)
-		      (string-ends-with ".git" uri)
-		      (string-ends-with "/" uri)))
-	     (user (subseq uri start slash))
-	     (name (subseq uri (1+ slash) dot)))
-	`(github-repo :dir ,user :name ,name
-		      :uri ,(github-uri user name)
-		      :url ,(github-url user name))))))
+  (let ((uri (first (string-split "#" uri))))
+    (let ((start (or (string-starts-with "github:" uri)
+		     (string-starts-with "git://github.com/" uri)
+		     (string-starts-with "http://github.com/" uri)
+		     (string-starts-with "https://github.com/" uri))))
+      (when start
+	(let* ((slash (or (position #\/ uri :start start)
+			  (error "Invalid repo uri ~S" uri)))
+	       (dot (or (string-ends-with ".git/" uri)
+			(string-ends-with ".git" uri)
+			(string-ends-with "/" uri)))
+	       (user (subseq uri start slash))
+	       (name (subseq uri (1+ slash) dot)))
+	  `(github-repo :dir ,user :name ,name
+			:uri ,(github-uri user name)
+			:url ,(github-url user name)))))))
 
 ;;  repo uri handler
 
-(defvar *repo-uri-handlers*
-  '(github-repo-uri-handler))
+(defparameter *repo-uri-handlers*
+  '(github-repo-uri-handler
+    git-repo-uri-handler))
 
 (defvar *repos* ())
 
@@ -251,29 +326,40 @@
   (setf *repos* nil))
 
 (defun find-repo (uri)
-  (or (find uri *repos* :key 'repo-uri :test 'string=)
-      (if (position #\/ uri)
-	  (find uri *repos* :key 'repo-dir/name :test 'string=)
-	  (find uri *repos* :key 'repo-name :test 'string=))))
+  (let ((uri (string uri)))
+    (or (find uri *repos* :key 'repo-uri :test 'string=)
+	(if (position #\/ uri)
+	    (find uri *repos* :key 'repo-dir/name :test 'string-equal)
+	    (find uri *repos* :key 'repo-name :test 'string-equal)))))
 
-(defun repo (uri &rest args &key packages &allow-other-keys)
+(defun find-repo-by-package (x)
+  (find x *repos* :test #'repo-package-p))
+
+(defun uri-fragment (x)
+  (second (string-split "#" x)))
+
+(defun repo (uri)
   "Factory function for repository classes using *REPO-URI-HANDLERS*."
-  (labels ((do-handlers (handlers)
-	     (when handlers
-	       (or (funcall (first handlers) uri)
-		   (do-handlers (rest handlers))))))
-    (let ((spec (do-handlers *repo-uri-handlers*)))
-      (when spec
-	(let* ((class (first spec))
-	       (initargs (rest spec))
-	       (uri (getf initargs :uri))
-	       (kw (kw (getf initargs :name)))
-	       (initargs (plist-merge initargs args
-				      `(:packages ,(or packages `(,kw))))))
-	  (or (find-repo uri)
-	      (let ((repo (apply 'make-instance class initargs)))
-		(push repo *repos*)
-		repo)))))))
+  (destructuring-bind (uri &rest packages) (string-split " " uri)
+    (or (find-repo uri)
+	(when (stringp uri)
+	  (labels ((do-handlers (handlers)
+		     (when handlers
+		       (or (funcall (first handlers) uri)
+			   (do-handlers (rest handlers))))))
+	    (let ((spec (do-handlers *repo-uri-handlers*)))
+	      (when spec
+		(let* ((class (first spec))
+		       (initargs (rest spec))
+		       (uri (getf initargs :uri))
+		       (kw (kw (getf initargs :name)))
+		       (initargs (plist-merge initargs
+					      `(:packages ,(or packages
+							       `(,kw))))))
+		  (or (find-repo uri)
+		      (let ((repo (apply 'make-instance class initargs)))
+			(push repo *repos*)
+			repo))))))))))
 
 (defun repo-or-die (x)
   (or (repo x)
@@ -307,6 +393,8 @@
 
 ;;  manifest
 
+(defvar *manifest*)
+
 (defclass manifest ()
   ((write-date :initarg :write-date
 	       :accessor manifest-write-date
@@ -321,6 +409,12 @@
 (defgeneric manifest-file (manifest))
 (defgeneric reload-manifest (manifest))
 (defgeneric maybe-reload-manifest (manifest))
+
+(defmethod print-object ((obj manifest) stream)
+  (print-unreadable-object (obj stream :type t :identity t)
+    (format stream "~S ~A repos"
+	    (manifest-file obj)
+	    (length (manifest-repos obj)))))
 
 (defmethod manifest-file ((manifest manifest))
   (str (manifest-dir manifest) "/repo.manifest"))
@@ -389,11 +483,52 @@
 ;;  install and update commands
 
 (defmethod install ((x string))
+  (when *manifest*
+    (maybe-reload-manifest *manifest*))
   (if (manifest-file-p x)
       (install (manifest-or-die x))
       (install (repo-or-die x))))
 
+(defmethod install ((x null))
+  nil)
+
+(defmethod install ((x symbol))
+  (when *manifest*
+    (maybe-reload-manifest *manifest*))
+  (install (repo-or-die x)))
+
 (defmethod update ((x string))
+  (when *manifest*
+    (maybe-reload-manifest *manifest*))
   (if (manifest-file-p x)
       (update (manifest-or-die x))
       (update (repo-or-die x))))
+
+(defmethod update ((x null))
+  nil)
+
+(defmethod update ((x symbol))
+  (when *manifest*
+    (maybe-reload-manifest *manifest*))
+  (update (repo-or-die x)))
+
+;;  system-definition
+
+(defun sysdef (x)
+  (when *manifest*
+    (maybe-reload-manifest *manifest*))
+  (let ((repo (or (find-repo-by-package x)
+		  (repo x))))
+    (when repo
+      (install repo)
+      (pathname (repo-asd repo x)))))
+
+;;  setup
+
+(defun boot ()
+  (let ((manifest-file (str *repo-dir* "/repo.manifest")))
+    (when (probe-file manifest-file)
+      (setq *manifest* (manifest manifest-file)
+	    *repos* (manifest-repos *manifest*))
+      (when (find-package :asdf)
+	(pushnew 'sysdef asdf:*system-definition-search-functions*)))))
