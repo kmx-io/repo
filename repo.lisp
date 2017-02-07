@@ -19,6 +19,9 @@
 	   #:*repos*
 	   #:update))
 
+(defpackage :repo-user
+  (:use :common-lisp :repo))
+
 (in-package :repo)
 
 (defvar *repo-dir* "~/common-lisp")
