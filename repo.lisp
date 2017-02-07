@@ -218,54 +218,54 @@
 	     (probe-file "/usr/local/bin/git")
 	     (first-line (sh "which git"))))
 
-(defun git (&rest args)
+(defun $git (&rest args)
   (apply 'run-program *git* args))
 
 ;;  git repository class
 
 (defclass git-repo (repo) ())
 
-(defgeneric git-checkout (repo))
-(defgeneric git-clone (repo))
-(defgeneric git-fetch (repo))
-(defgeneric git-pull (repo))
+(defgeneric $git-checkout (repo))
+(defgeneric $git-clone (repo))
+(defgeneric $git-fetch (repo))
+(defgeneric $git-pull (repo))
 
-(defmethod git-checkout ((repo git-repo))
+(defmethod $git-checkout ((repo git-repo))
   (let ((local (repo-local-dir repo))
 	(head (repo-head repo)))
-    (git "-C" (translate-home local) "checkout" (str head))
+    ($git "-C" (translate-home local) "checkout" (str head))
     nil))
 
-(defmethod git-clone ((repo git-repo))
+(defmethod $git-clone ((repo git-repo))
   (let ((local (repo-local-dir repo))
 	(url (repo-url repo)))
     (when (probe-dir local)
       (error "git clone: not overwriting existing local directory~&~S" local))
     (let ((parent (dirname local)))
       (ensure-directories-exist (str parent "/") :verbose t)
-      (git "-C" (translate-home parent) "clone" url)
+      ($git "-C" (translate-home parent) "clone" url)
       nil)))
 
-(defmethod git-fetch ((repo git-repo))
+(defmethod $git-fetch ((repo git-repo))
   (let ((local (repo-local-dir repo)))
-    (git "-C" (translate-home local) "fetch")
+    ($git "-C" (translate-home local) "fetch")
     nil))
 
-(defmethod git-pull ((repo git-repo))
+(defmethod $git-pull ((repo git-repo))
   (let ((local (repo-local-dir repo)))
-    (git "-C" (translate-home local) "pull")
+    ($git "-C" (translate-home local) "pull")
     nil))
 
 (defmethod install ((repo git-repo))
   (let ((local (repo-local-dir repo)))
     (unless (probe-dir local)
-      (git-clone repo))
+      ($git-clone repo))
     (asdf::load-asd (repo-asd repo))))
 
 (defmethod update ((repo git-repo))
   (when (probe-dir (repo-local-dir repo))
-    (git-fetch repo)
-    (git-checkout repo)))
+    ($git-fetch repo)
+    ($git-checkout repo)))
 
 (defun git-repo-uri-handler (uri)
   (let ((uri (first (string-split "#" uri))))
@@ -368,11 +368,11 @@
   (or (repo x)
       (error "unknown repository descriptor : ~S" x)))
 
-(defmethod git-clone ((uri string))
-  (git-clone (repo-or-die uri)))
+(defmethod $git-clone ((uri string))
+  ($git-clone (repo-or-die uri)))
 
-(defmethod git-pull ((uri string))
-  (git-pull (repo-or-die uri)))
+(defmethod $git-pull ((uri string))
+  ($git-pull (repo-or-die uri)))
 
 ;;  repos list
 
