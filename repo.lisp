@@ -11,6 +11,8 @@
   (:export #:boot
 	   #:clear-repos
 	   #:find-repo
+           #:git
+           #:github
 	   #:install
 	   #:manifest
 	   #:*manifest*
@@ -282,6 +284,9 @@
 		     :uri ,uri
 		     :url ,uri))))))
 
+(defun git (url &rest initargs)
+  (apply #'make-instance (append (git-repo-uri-handler url) initargs)))
+
 ;;  github repository class
 
 (defclass github-repo (git-repo) ())
@@ -316,6 +321,13 @@
 	  `(github-repo :dir ,user :name ,name
 			:uri ,(github-uri user name)
 			:url ,(github-url user name)))))))
+
+(defun github (user name &rest initargs)
+  (apply #'make-instance 'github-repo
+	 :dir user :name name
+	 :uri (github-uri user name)
+	 :url (github-url user name)
+	 initargs))
 
 ;;  repo uri handler
 
@@ -376,18 +388,6 @@
 
 ;;  repos list
 
-(defun repos-from-stream (stream)
-  (loop for line = (read-line stream nil)
-     while line
-     for spec = (string-trim *spaces* line)
-     unless (string-starts-with "#" spec)
-     collect (repo-or-die spec)))
-
-(defun repos-from-file (pathname)
-  (with-open-file (in pathname :element-type 'character
-		      :external-format :utf-8)
-    (values (repos-from-stream in) (file-write-date in))))
-
 (defmethod install ((repos cons))
   (map nil 'install repos))
 
@@ -423,18 +423,21 @@
   (str (manifest-dir manifest) "/repo.manifest"))
 
 (defun manifest-from-file (pathname)
-  (multiple-value-bind (repos write-date)
-      (repos-from-file pathname)
+  (let ((*repos* nil)
+	(write-date (file-write-date pathname)))
+    (load pathname)
     (make-instance 'manifest
 		   :write-date write-date
 		   :dir (dirname pathname)
-		   :repos repos)))
+		   :repos *repos*)))
 
 (defmethod reload-manifest ((manifest manifest))
-  (multiple-value-bind (repos write-date)
-      (repos-from-file (manifest-file manifest))
+  (let* ((pathname (manifest-file manifest))
+	 (*repos* nil)
+	 (write-date (file-write-date pathname)))
+    (load pathname)
     (setf (manifest-write-date manifest) write-date
-	  (manifest-repos manifest) repos))
+	  (manifest-repos manifest) *repos*))
   manifest)
 
 (defmethod maybe-reload-manifest ((manifest manifest))
