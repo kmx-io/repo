@@ -217,6 +217,12 @@
 (defmethod repo-package-p (x repo)
   (find x (repo-packages repo) :test #'string-equal))
 
+(defun repo-by-url (url)
+  (find url *repos* :key #'repo-url :test #'string=))
+
+(defun repo-by-uri (uri)
+  (find uri *repos* :key #'repo-uri :test #'string=))
+
 ;;  git command
 
 (defvar *git*
@@ -289,7 +295,11 @@
 		     :url ,uri))))))
 
 (defun git (url &rest initargs)
-  (apply #'make-instance (append (git-repo-uri-handler url) initargs)))
+  (or (repo-by-url url)
+      (let ((repo (apply #'make-instance
+                         (append (git-repo-uri-handler url) initargs))))
+        (push repo *repos*)
+        repo)))
 
 ;;  github repository class
 
@@ -327,11 +337,15 @@
 			:url ,(github-url user name)))))))
 
 (defun github (user name &rest initargs)
-  (apply #'make-instance 'github-repo
-	 :dir user :name name
-	 :uri (github-uri user name)
-	 :url (github-url user name)
-	 initargs))
+  (let ((uri (github-uri user name)))
+    (or (repo-by-uri uri)
+        (let ((repo (apply #'make-instance 'github-repo
+                           :dir user :name name
+                           :uri uri
+                           :url (github-url user name)
+                           initargs)))
+          (push repo *repos*)
+          repo))))
 
 ;;  repo uri handler
 
