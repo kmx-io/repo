@@ -514,6 +514,9 @@
       (install (manifest-or-die x))
       (install (repo-or-die x))))
 
+(defmethod install ((x symbol))
+  (install (symbol-name x)))
+
 (defmethod install ((x null))
   nil)
 
