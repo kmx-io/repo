@@ -18,7 +18,7 @@
 (github "adamczykm" "iterate")
 (github "cffi" "cffi")
 (github "cl-babel" "babel")
-(github "cl-plus-ssl" "cl-plus-ssl cl+ssl")
+(github "cl-plus-ssl" "cl-plus-ssl" :packages '("cl+ssl"))
 (github "dlowe-net" "local-time")
 (github "edicl" "chunga")
 (github "edicl" "cl-fad")
