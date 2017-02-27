@@ -11,6 +11,7 @@
 (github "RailsOnLisp" "re")
 (github "RailsOnLisp" "rol-assets")
 (github "RailsOnLisp" "rol-files")
+(github "RailsOnLisp" "rol-log")
 (github "RailsOnLisp" "rol-server")
 (github "RailsOnLisp" "rol-template")
 (github "RailsOnLisp" "rol-uri")
