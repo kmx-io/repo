@@ -396,7 +396,7 @@
 
 (defun repo-or-die (x)
   (or (repo x)
-      (error "unknown repository descriptor : ~S" x)))
+      (error "unknown repository : ~S" x)))
 
 (defmethod $git-clone ((uri string))
   ($git-clone (repo-or-die uri)))
