@@ -200,9 +200,11 @@
 
 (defmethod initialize-instance :after ((repo repo) &rest initargs)
   (declare (ignore initargs))
-  (with-slots (dir name) repo
+  (with-slots (dir name packages) repo
     (setf (slot-value repo 'local-dir)
-	  (format nil "~A/~A/~A" *repo-dir* dir name))))
+	  (format nil "~A/~A/~A" *repo-dir* dir name))
+    (unless (slot-boundp repo 'packages)
+      (setf packages (list name)))))
 
 (defmethod repo-asd ((repo repo) &optional
 				   (package (first (repo-packages repo))))
