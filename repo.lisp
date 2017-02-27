@@ -163,6 +163,8 @@
 
 ;;  repository base class
 
+(defvar *repos* ())
+
 (defclass repo ()
   ((dir :initarg :dir
 	:reader repo-dir
@@ -352,8 +354,6 @@
 (defparameter *repo-uri-handlers*
   '(github-repo-uri-handler
     git-repo-uri-handler))
-
-(defvar *repos* ())
 
 (defun clear-repos ()
   (setf *repos* nil))
