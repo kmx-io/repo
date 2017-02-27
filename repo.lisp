@@ -509,6 +509,7 @@
 (defmethod install ((x string))
   (when *manifest*
     (maybe-reload-manifest *manifest*))
+  (setq *repos* (manifest-repos *manifest*))
   (if (manifest-file-p x)
       (install (manifest-or-die x))
       (install (repo-or-die x))))
@@ -519,11 +520,13 @@
 (defmethod install ((x symbol))
   (when *manifest*
     (maybe-reload-manifest *manifest*))
+  (setq *repos* (manifest-repos *manifest*))
   (install (repo-or-die x)))
 
 (defmethod update ((x string))
   (when *manifest*
     (maybe-reload-manifest *manifest*))
+  (setq *repos* (manifest-repos *manifest*))
   (if (manifest-file-p x)
       (update (manifest-or-die x))
       (update (repo-or-die x))))
@@ -534,6 +537,7 @@
 (defmethod update ((x symbol))
   (when *manifest*
     (maybe-reload-manifest *manifest*))
+  (setq *repos* (manifest-repos *manifest*))
   (update (repo-or-die x)))
 
 ;;  system-definition
@@ -541,6 +545,7 @@
 (defun sysdef (x)
   (when *manifest*
     (maybe-reload-manifest *manifest*))
+  (setq *repos* (manifest-repos *manifest*))
   (let ((repo (or (find-repo-by-package x)
 		  (repo x))))
     (when repo
@@ -552,7 +557,7 @@
 (defun boot ()
   (let ((manifest-file (str *repo-dir* "/repo.manifest")))
     (when (probe-file manifest-file)
-      (setq *manifest* (manifest manifest-file)
-	    *repos* (manifest-repos *manifest*))
+      (setq *manifest* (manifest manifest-file))
+      (setq *repos* (manifest-repos *manifest*))
       (when (find-package :asdf)
 	(pushnew 'sysdef asdf:*system-definition-search-functions*)))))
