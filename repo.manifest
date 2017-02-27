@@ -37,6 +37,7 @@
 (github "keithj" "deoxybyte-unix")
 (github "lowh" "cl-debug")
 (github "lowh" "exec-js")
+(github "lowh" "facts")
 (github "lowh" "lessp")
 (github "marijnh" "parse-js")
 (github "mishoo" "cl-uglify-js")
