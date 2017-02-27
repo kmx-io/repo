@@ -33,6 +33,7 @@
 (github "froydnj" "nibbles")
 (github "gwkkwg" "trivial-backtrace")
 (github "hankhero" "cl-json")
+(github "jdz" "rfc2388")
 (github "keithj" "deoxybyte-unix")
 (github "lowh" "cl-debug")
 (github "lowh" "exec-js")
