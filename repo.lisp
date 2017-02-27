@@ -194,7 +194,9 @@
 (defmethod print-object ((obj repo) stream)
   (print-unreadable-object (obj stream :type t :identity t)
     (with-slots (dir name uri local-dir packages) obj
-      (format stream "~A/~A ~S ~S ~S" dir name uri local-dir packages))))
+      (format stream "~A/~A ~S ~S ~S" dir name uri local-dir
+              (when (slot-boundp obj 'packages)
+                packages)))))
 
 (defmethod initialize-instance :after ((repo repo) &rest initargs)
   (declare (ignore initargs))
