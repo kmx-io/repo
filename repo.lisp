@@ -373,6 +373,8 @@
 
 (defun repo (uri)
   "Factory function for repository classes using *REPO-URI-HANDLERS*."
+  (when (symbolp uri)
+    (setq uri (symbol-name uri)))
   (destructuring-bind (uri &rest packages) (string-split " " uri)
     (or (find-repo uri)
 	(when (stringp uri)
