@@ -42,6 +42,7 @@
 (github "marijnh" "parse-js")
 (github "mishoo" "cl-uglify-js")
 (github "nallen05" "rw-ut")
+(github "nallen05" "trivial-email-utf-8")
 (github "nikodemus" "esrap")
 (github "pcostanza" "closer-mop")
 (github "pmai" "md5")
