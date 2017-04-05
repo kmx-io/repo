@@ -68,6 +68,7 @@
 (git "http://git.kpe.io/cl-base64.git")
 (git "http://git.kpe.io/puri.git")
 (git "https://gitlab.common-lisp.net/alexandria/alexandria.git")
+(git "https://gitlab.common-lisp.net/cl-smtp/cl-smtp.git")
 (git "https://gitlab.common-lisp.net/cl-utilities/cl-utilities.git")
 (git "https://gitlab.common-lisp.net/metabang-bind/metabang-bind.git")
 (git "https://gitlab.common-lisp.net/rfc2388/rfc2388.git")
