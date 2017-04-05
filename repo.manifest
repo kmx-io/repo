@@ -27,6 +27,7 @@
 (github "edicl" "drakma")
 (github "edicl" "flexi-streams")
 (github "edicl" "hunchentoot")
+(github "eugeneia" "cl-qprint")
 (github "filonenko-mikhail" "cl-portaudio")
 (github "froydnj" "chipz")
 (github "froydnj" "ironclad")
