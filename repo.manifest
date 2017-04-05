@@ -32,6 +32,7 @@
 (github "froydnj" "chipz")
 (github "froydnj" "ironclad")
 (github "froydnj" "nibbles")
+(github "fukamachi" "trivial-utf-8")
 (github "gwkkwg" "trivial-backtrace")
 (github "hankhero" "cl-json")
 (github "jdz" "rfc2388")
