@@ -53,6 +53,7 @@
 (github "sharplispers" "split-sequence")
 (github "sionescu" "bordeaux-threads")
 (github "slime" "slime")
+(github "thephoeron" "let-over-lambda")
 (github "thodg" "cfg")
 (github "thodg" "cl-bcrypt")
 (github "thodg" "fb")
