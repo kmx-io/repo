@@ -66,6 +66,7 @@
 (github "trivial-garbage" "trivial-garbage")
 (github "trivial-gray-streams" "trivial-gray-streams")
 (github "usocket" "usocket")
+(github "vii" "teepeedee2")
 (git "http://git.kpe.io/cl-base64.git")
 (git "http://git.kpe.io/puri.git")
 (git "https://gitlab.common-lisp.net/alexandria/alexandria.git")
