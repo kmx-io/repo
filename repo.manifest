@@ -60,6 +60,7 @@
 (github "thephoeron" "let-over-lambda")
 (github "thodg" "cfg")
 (github "thodg" "cl-bcrypt")
+(github "thodg" "facts")
 (github "thodg" "fb")
 (github "thodg" "lessp")
 (github "thodg" "parse-css")
