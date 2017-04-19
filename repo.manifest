@@ -20,6 +20,7 @@
 (github "RailsOnLisp" "rol-template")
 (github "RailsOnLisp" "rol-uri")
 (github "adamczykm" "iterate")
+(github "binghe" "portable-threads")
 (github "cffi" "cffi")
 (github "cl-babel" "babel")
 (github "cl-plus-ssl" "cl-plus-ssl" :packages '("cl+ssl"))
