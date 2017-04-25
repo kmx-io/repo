@@ -19,6 +19,7 @@
 	   #:repo
 	   #:*repo-dir*
 	   #:*repos*
+	   #:svn
 	   #:update))
 
 (defpackage :repo-user
@@ -66,6 +67,12 @@
     (cond ((null slash) "")
 	  ((= 0 slash) "/")
 	  (t (subseq x 0 slash)))))
+
+(defun basename (x)
+  (let* ((end (or (string-ends-with "/" x) (length x)))
+	 (slash (position #\/ x :from-end t :end end)))
+    (cond ((null slash) (subseq x 0 end))
+	  (t (subseq x (1+ slash) end)))))
 
 (defun probe-dir (x)
   (probe-file (format nil "~A/" x)))
@@ -348,6 +355,59 @@
                            initargs)))
           (push repo *repos*)
           repo))))
+
+;;  subversion command
+
+(defvar *svn*
+  #+unix (or (probe-file "/usr/bin/svn")
+	     (probe-file "/usr/local/bin/svn")
+	     (first-line (sh "which svn"))))
+
+(defun $svn (&rest args)
+  (apply 'run-program *svn* args))
+
+;;  subversion repository class
+
+(defclass svn-repo (repo) ())
+
+(defgeneric $svn-checkout (repo))
+(defgeneric $svn-update (repo))
+
+(defmethod $svn-checkout ((repo svn-repo))
+  (let ((local (repo-local-dir repo))
+	(url (repo-url repo)))
+    (when (probe-dir local)
+      (error "svn checkout: not overwriting existing local directory~&~S" local))
+    (let ((parent (dirname local)))
+      (ensure-directories-exist (str parent "/") :verbose t)
+      ($svn "co" url (translate-home local))
+      nil)))
+
+(defmethod $svn-update ((repo svn-repo))
+  (let ((local (repo-local-dir repo)))
+    ($svn "up" (translate-home local))
+    nil))
+
+(defmethod install ((repo svn-repo))
+  (let ((local (repo-local-dir repo)))
+    (unless (probe-dir local)
+      ($svn-checkout repo))
+    (asdf::load-asd (repo-asd repo))))
+
+(defmethod update ((repo svn-repo))
+  (when (probe-dir (repo-local-dir repo))
+    ($svn-update repo)))
+
+(defun svn (url dir/name &rest initargs)
+  (or (repo-by-url url)
+      (let ((repo (apply #'make-instance 'svn-repo
+			 :dir (dirname dir/name)
+			 :name (basename dir/name)
+			 :url url :uri url
+			 :head (basename url)
+			 initargs)))
+        (push repo *repos*)
+        repo)))
 
 ;;  repo uri handler
 
