@@ -94,3 +94,4 @@
 (git "https://gitlab.common-lisp.net/cl-utilities/cl-utilities.git")
 (git "https://gitlab.common-lisp.net/metabang-bind/metabang-bind.git")
 (git "https://gitlab.common-lisp.net/rfc2388/rfc2388.git")
+(svn "http://GBBopen.org/svn/GBBopen/trunk/" "gbbopen/gbbopen")
