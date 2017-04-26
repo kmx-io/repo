@@ -5,6 +5,7 @@
 (github "KDr2" "sb-fastcgi")
 (github "KDr2" "cl-fastcgi")
 (github "RailsOnLisp" "bootstrap")
+(github "RailsOnLisp" "bordeaux-queue")
 (github "RailsOnLisp" "can")
 (github "RailsOnLisp" "cffi-errno")
 (github "RailsOnLisp" "cffi-posix")
