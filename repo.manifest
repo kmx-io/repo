@@ -81,6 +81,7 @@
 (github "sionescu" "static-vectors")
 (github "slime" "slime")
 (github "thephoeron" "let-over-lambda")
+(github "thodg" "cffi-portaudio")
 (github "thodg" "cfg")
 (github "thodg" "cl-bcrypt")
 (github "thodg" "facts")
