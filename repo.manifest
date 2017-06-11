@@ -31,6 +31,7 @@
 (github "cffi-posix" "fd-flexi")
 (github "cl-babel" "babel")
 (github "cl-plus-ssl" "cl-plus-ssl" :packages '("cl+ssl"))
+(github "cl-stream" "cl-stream")
 (github "dlowe-net" "local-time")
 (github "drdo" "do-urlencode")
 (github "edicl" "chunga")
