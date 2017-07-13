@@ -361,7 +361,7 @@
 (defvar *svn*
   #+unix (or (probe-file "/usr/bin/svn")
              (probe-file "/usr/local/bin/svn")
-             (first-line (sh "which svn"))))
+             (first-line (ignore-errors (sh "which svn")))))
 
 (defun $svn (&rest args)
   (apply 'run-program *svn* args))
