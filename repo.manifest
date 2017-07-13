@@ -17,6 +17,7 @@
 (github "RailsOnLisp" "rol-server")
 (github "RailsOnLisp" "rol-template")
 (github "RailsOnLisp" "rol-uri")
+(github "RailsOnLisp" "thot")
 (github "adamczykm" "iterate")
 (github "binghe" "portable-threads")
 (github "cffi" "cffi")
