@@ -252,9 +252,13 @@
 (defgeneric $git-pull (repo))
 
 (defmethod $git-checkout ((repo git-repo))
-  (let ((local (repo-local-dir repo))
-        (head (repo-head repo)))
-    ($git "-C" (translate-home local) "checkout" (str head))
+  (let* ((local (repo-local-dir repo))
+         (head (repo-head repo))
+         (str-head (str head))
+         (args `("-C" ,(translate-home local) "checkout"
+                      ,@(unless (= 0 (length str-head))
+                          '(str-head)))))
+    (apply #'$git args)
     nil))
 
 (defmethod $git-clone ((repo git-repo))
