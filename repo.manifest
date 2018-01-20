@@ -83,7 +83,6 @@
 (github "thephoeron" "let-over-lambda")
 (github "thodg" "cffi-portaudio")
 (github "thodg" "cfg")
-(github "thodg" "cl-bcrypt")
 (github "thodg" "facts")
 (github "thodg" "fb")
 (github "thodg" "lessp")
