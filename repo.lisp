@@ -329,7 +329,7 @@
        (when package "#") package))
 
 (defun github-url (user name)
-  (str "http://github.com/" user "/" name ".git"))
+  (str "https://github.com/" user "/" name ".git"))
 
 (defun github-repo-uri-handler (uri)
   (let ((uri (first (string-split "#" uri))))
