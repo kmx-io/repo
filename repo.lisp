@@ -11,6 +11,7 @@
   (:export #:boot
            #:clear-repos
            #:find-repo
+           #:find-repo-by-package
            #:git
            #:github
            #:install
