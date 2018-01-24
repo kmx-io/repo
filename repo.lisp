@@ -290,8 +290,7 @@
 
 (defmethod update ((repo git-repo))
   (when (probe-dir (repo-local-dir repo))
-    ($git-fetch repo)
-    ($git-checkout repo)))
+    ($git-pull repo)))
 
 (defun git-repo-uri-handler (uri)
   (let ((uri (first (string-split "#" uri))))
