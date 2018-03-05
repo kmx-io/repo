@@ -218,8 +218,11 @@
 
 (defmethod repo-asd ((repo repo) &optional
                                    (package (first (repo-packages repo))))
-  (str (translate-home (repo-local-dir repo)) "/"
-       (string-downcase package) ".asd"))
+  (namestring
+   (first
+    (directory
+     (str (translate-home (repo-local-dir repo)) "/**/"
+          (string-downcase package) ".asd")))))
 
 (defmethod repo-dir/name ((repo repo))
   (str (repo-dir repo) "/" (repo-name repo)))
