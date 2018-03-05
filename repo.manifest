@@ -35,6 +35,8 @@
 (github "cl-remap" "unistd-remap")
 (github "cl-stream" "cl-stream")
 (github "cl-stream" "babel-stream")
+(github "cl-stream" "unistd-stream")
+(github "cl-stream" "unistd-stdio")
 (github "cosmos72" "stmx")
 (github "dlowe-net" "local-time")
 (github "drdo" "do-urlencode")
