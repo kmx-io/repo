@@ -38,6 +38,7 @@
 (github "cl-stream" "unistd-stream")
 (github "cl-stream" "unistd-stdio")
 (github "cosmos72" "stmx")
+(github "diogoalexandrefranco" "cl-strings")
 (github "dlowe-net" "local-time")
 (github "drdo" "do-urlencode")
 (github "edicl" "chunga")
@@ -61,6 +62,7 @@
 (github "gwkkwg" "trivial-backtrace")
 (github "hankhero" "cl-json")
 (github "jdz" "rfc2388")
+(github "jech" "cl-yacc")
 (github "keithj" "deoxybyte-unix")
 (github "lowh" "cl-debug")
 (github "lowh" "exec-js")
@@ -68,6 +70,7 @@
 (github "mishoo" "cl-uglify-js")
 (github "nallen05" "rw-ut")
 (github "nallen05" "trivial-email-utf-8")
+(github "next-browser" "next")
 (github "nikodemus" "esrap")
 (github "orthecreedence" "blackbird")
 (github "orthecreedence" "cl-async"
