@@ -19,6 +19,7 @@
 (github "RailsOnLisp" "rol-uri")
 (github "RailsOnLisp" "thot")
 (github "adamczykm" "iterate")
+(github "ahefner" "shuffletron")
 (github "binghe" "portable-threads")
 (github "cffi" "cffi")
 (github "cffi-posix" "cffi-dirent")
