@@ -104,21 +104,45 @@
   (format t "~&$ ~A~{ ~A~}~%" cmd args)
   (let ((out (make-string-output-stream))
         (err (make-string-output-stream)))
-    (let* ((process (sb-ext:run-program cmd args
-                                        :output out
-                                        :error err
-                                        :external-format :utf-8))
-           (exit-code (sb-ext:process-exit-code process)))
+    (unwind-protect
+	 (let* ((process (sb-ext:run-program cmd args
+					     :output out
+					     :error err
+					     :external-format :utf-8))
+		(exit-code (sb-ext:process-exit-code process))
+		(out-str (get-output-stream-string out))
+		(err-str (get-output-stream-string err)))
+	   (format t "~&~A~&" out-str)
+	   (format t "~&~A~&" err-str)
+	   (unless (= 0 exit-code)
+	     (with-simple-restart (continue "Ignore command error")
+	       (error "~&$ ~A~{ ~A~}~%~A" cmd args err-str)))
+	   (values out-str err-str exit-code))
       (close out)
-      (close err)
-      (let ((out (get-output-stream-string out))
-            (err (get-output-stream-string err)))
-        (format t "~&~A~&" out)
-        (format t "~&~A~&" err)
-        (unless (= 0 exit-code)
-          (with-simple-restart (continue "Ignore command error")
-            (error "~&$ ~A~{ ~A~}~%~A" cmd args err)))
-        (values out err exit-code)))))
+      (close err))))
+
+#+ccl
+(defun run-program (cmd &rest args)
+  (format t "~&$ ~A~{ ~A~}~%" cmd args)
+  (let ((out (make-string-output-stream))
+	(err (make-string-output-stream)))
+    (unwind-protect
+	 (let* ((process (ccl:run-program cmd args
+					  :wait nil
+					  :output out
+					  :error err
+					  :external-format :utf-8))
+		(exit-code (ccl:external-process-status process))
+		(out-str (get-output-stream-string out))
+		(err-str (get-output-stream-string err)))
+	   (format t "~&~A~&" out-str)
+	   (format t "~&~A~&" err-str)
+	   (unless (eql :running exit-code)
+	     (with-simple-restart (continue "Ignore command error")
+	       (error "~&$ ~A~{ ~A~}~%~A" cmd args err-str)))
+	   (values out-str err-str exit-code))
+      (close out)
+      (close err))))
 
 #-windows
 (defun sh (&rest parts)
