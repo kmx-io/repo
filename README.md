@@ -2,17 +2,54 @@
 
 Common interface for version control systems.
 
-Repo along with Manifest allow you to use source repositories directly as
-ASDF-installable packages. Keep it synced with upstream for development
-purposes.
+Repo allows you to use source repositories directly as ASDF-installable
+packages and keep them synced with upstream for development purposes.
+
+Each repo is installed in a subdirectory.
+Github repositories are installed in the user subdirectory.
 
 ## Usage
 
+Install ASDF from git :
+
+``` SH
+mkdir -p ~/common-lisp/fare
+cd ~/common-lisp/fare
+git clone https://github.com/fare/asdf.git
+cd asdf
+make
+```
+
+Install REPO from git :
+
+``` SH
+mkdir -p ~/common-lisp/thodg
+cd ~/common-lisp/thodg
+git clone https://github.com/thodg/repo.git
+make
+```
+
+In your Common Lisp implementation startup file :
+
 ``` Common-Lisp
-;; startup repo
-(load "~/common-lisp/thodg/repo/repo.lisp")
+(load "~/common-lisp/fare/asdf/build/asdf")
+(load "~/common-lisp/thodg/repo/repo")
 (repo:boot)
 ```
+
+Repo integrates with ASDF :
+
+``` Common-Lisp
+(asdf:load-system :thot)
+```
+
+To update all repositories :
+
+``` Common-Lisp
+(repo:update repo:*manifest*)
+```
+
+Other functions :
 
 ``` Common-Lisp
 (repo:repo "github:thodg/repo")         ;; Define repository by URI
