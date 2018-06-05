@@ -333,7 +333,7 @@
 
 (defclass github-repo (git-repo) ())
 
-(defmethod print-object ((obj repo) stream)
+(defmethod print-object ((obj github-repo) stream)
   (print-unreadable-object (obj stream :type t :identity t)
     (with-slots (dir name local-dir packages) obj
       (format stream "~A/~A ~S ~S" dir name local-dir packages))))
@@ -594,9 +594,6 @@
   (if (manifest-file-p x)
       (install (manifest-or-die x))
       (install (repo-or-die x))))
-
-(defmethod install ((x symbol))
-  (install (symbol-name x)))
 
 (defmethod install ((x null))
   nil)
