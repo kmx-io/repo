@@ -76,7 +76,8 @@
           (t (subseq x (1+ slash) end)))))
 
 (defun probe-dir (x)
-  (probe-file (format nil "~A/" x)))
+  #+clisp (ext:probe-directory (format nil "~A/" x))
+  #-clisp (probe-file (format nil "~A/" x)))
 
 (defun str (&rest parts)
   (labels ((to-str (x)
@@ -102,23 +103,34 @@
 #+sbcl
 (defun run-program (cmd &rest args)
   (format t "~&$ ~A~{ ~A~}~%" cmd args)
-  (let ((out (make-string-output-stream))
-        (err (make-string-output-stream)))
-    (let* ((process (sb-ext:run-program cmd args
-                                        :output out
-                                        :error err
-                                        :external-format :utf-8))
-           (exit-code (sb-ext:process-exit-code process)))
-      (close out)
-      (close err)
-      (let ((out (get-output-stream-string out))
-            (err (get-output-stream-string err)))
-        (format t "~&~A~&" out)
-        (format t "~&~A~&" err)
-        (unless (= 0 exit-code)
-          (with-simple-restart (continue "Ignore command error")
-            (error "~&$ ~A~{ ~A~}~%~A" cmd args err)))
-        (values out err exit-code)))))
+  (let* ((out (make-string-output-stream))
+         (err (make-string-output-stream))
+         (process (sb-ext:run-program cmd args
+                                      :output out
+                                      :error err
+                                      :external-format :utf-8))
+         (exit-code (sb-ext:process-exit-code process)))
+    (close out)
+    (close err)
+    (let ((out (get-output-stream-string out))
+          (err (get-output-stream-string err)))
+      (format t "~&~A~&" out)
+      (format t "~&~A~&" err)
+      (unless (= 0 exit-code)
+        (with-simple-restart (continue "Ignore command error")
+          (error "~&$ ~A~{ ~A~}~%~A" cmd args err)))
+      (values out err exit-code))))
+
+#+clisp
+(defun run-program (cmd &rest args)
+  (format t "~&$ ~A~{ ~A~}~%" cmd args)
+  (let* ((buf (make-array '(4096) :element-type 'character))
+         (stream (ext:run-program cmd :arguments args
+                                  :output :stream :wait t))
+         (len (read-sequence buf stream))
+         (out (subseq buf 0 len)))
+    (format t "~&~A~&" out)
+    (values out "" 0)))
 
 #-windows
 (defun sh (&rest parts)
