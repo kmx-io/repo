@@ -37,14 +37,14 @@ repo:*repos*                            ;; List of defined repositories
 
 ## Version informations
 
-This version only supports git repositories and relies on SBCL and /bin/sh.
-Next releases will support other VCS and drop requirements on SBCL.
+This version only supports git repositories and /bin/sh.
+Next releases will support other VCS.
+
+SBCL and CLISP are supported.
 
 ## TODO
 
 *   git tags and branches
-*   drop dependency on sbcl (run-program)
-*   drop dependency on /bin/sh
 *   CVS
 *   subversion
 *   bzr
