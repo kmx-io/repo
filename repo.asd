@@ -1,7 +1,7 @@
 ;;
 ;;  repo  -  common interface for version control systems
 ;;
-;;  Copyright 2016-2017 Thomas de Grivel <thomas@lowh.net>
+;;  Copyright 2016-2018 Thomas de Grivel <thoxdg@gmail.com>
 ;;
 
 (defpackage :repo.system
