@@ -193,8 +193,6 @@
          :reader repo-name
          :type string)
    (head :initarg :head
-         :initform nil
-         :reader repo-head
          :type string)
    (uri :initarg :uri
         :reader repo-uri
@@ -211,6 +209,8 @@
 
 (defgeneric repo-asd (repo &optional package))
 (defgeneric repo-dir/name (repo))
+(defgeneric repo-head (repo))
+(defgeneric repo-head-default (repo))
 (defgeneric repo-package-p (x repo))
 
 (defmethod print-object ((obj repo) stream)
@@ -238,6 +238,11 @@
 
 (defmethod repo-dir/name ((repo repo))
   (str (repo-dir repo) "/" (repo-name repo)))
+
+(defmethod repo-head ((repo repo))
+  (if (slot-boundp repo 'head)
+      (slot-value repo 'head)
+      (repo-head-default repo)))
 
 (defmethod repo-package-p (x repo)
   (find x (repo-packages repo) :test #'string-equal))
@@ -302,6 +307,9 @@
     (unless (probe-dir local)
       ($git-clone repo))
     (asdf::load-asd (repo-asd repo))))
+
+(defmethod repo-head-default ((repo git-repo))
+  "master")
 
 (defmethod update ((repo git-repo))
   (when (probe-dir (repo-local-dir repo))
