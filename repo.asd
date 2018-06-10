@@ -12,7 +12,7 @@
 (defsystem :repo
   :name "repo"
   :author "Thomas de Grivel <thoxdg@gmail.com>"
-  :version "0.1"
+  :version "0.2"
   :description "common interface for version control systems"
   :depends-on ()
   :components

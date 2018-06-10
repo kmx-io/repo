@@ -74,13 +74,14 @@ repo:*repos*                            ;; List of defined repositories
 
 ## Version informations
 
-This version only supports git repositories and /bin/sh.
-Next releases will support other VCS.
+This version only supports git repositories and relies on /bin/sh.
+Next releases will support other VCS / systems.
 
 SBCL and CLISP are supported.
 
 ## TODO
 
+*   use UIOP:RUN-PROGRAM
 *   git tags and branches
 *   CVS
 *   subversion
