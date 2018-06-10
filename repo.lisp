@@ -202,7 +202,7 @@
         :type string)
    (local-dir :initarg :local-dir
               :reader repo-local-dir
-              :type pathname)
+              :type string)
    (packages :initarg :packages
              :reader repo-packages
              :type list)))
