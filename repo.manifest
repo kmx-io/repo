@@ -72,6 +72,7 @@
 (github "lowh" "cl-debug")
 (github "lowh" "exec-js")
 (github "marijnh" "parse-js")
+(github "melisgl" "named-readtables")
 (github "mishoo" "cl-uglify-js")
 (github "nallen05" "rw-ut")
 (github "nallen05" "trivial-email-utf-8")
