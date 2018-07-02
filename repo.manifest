@@ -38,6 +38,7 @@
 (github "cl-stream" "cl-stream")
 (github "cl-stream" "babel-stream")
 (github "cl-stream" "token-stream")
+(github "cl-stream" "matcher-stream")
 (github "cl-stream" "parser-stream")
 (github "cl-stream" "unistd-stream")
 (github "cl-stream" "unistd-stdio")
