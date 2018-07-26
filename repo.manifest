@@ -29,6 +29,7 @@
 (github "cffi-posix" "cffi-socket")
 (github "cffi-posix" "cffi-stdlib")
 (github "cffi-posix" "cffi-unistd")
+(github "chaitanyagupta" "chronicity")
 (github "cl-adams" "adams")
 (github "cl-babel" "babel")
 (github "cl-plus-ssl" "cl-plus-ssl" :packages '("cl+ssl"))
