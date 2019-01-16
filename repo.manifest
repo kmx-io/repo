@@ -145,6 +145,7 @@
 (github "thodg" "less-parser")
 (github "thodg" "lessp")
 (github "thodg" "positional")
+(github "thodg" "random-sequence")
 (github "thodg" "repo")
 (github "thodg" "str")
 (github "tpapp" "ffa")
