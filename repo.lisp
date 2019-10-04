@@ -306,7 +306,9 @@
   (let ((local (repo-local-dir repo)))
     (unless (probe-dir local)
       ($git-clone repo))
-    (asdf::load-asd (repo-asd repo))))
+    (let ((asd (repo-asd repo)))
+      (when asd
+        (asdf::load-asd asd)))))
 
 (defmethod repo-head-default ((repo git-repo))
   "master")
