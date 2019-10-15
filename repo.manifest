@@ -53,6 +53,7 @@
 (github "drdo" "do-urlencode")
 (github "edicl" "chunga")
 (github "edicl" "cl-fad")
+(github "edicl" "cl-interpol")
 (github "edicl" "cl-ppcre")
 (github "edicl" "cl-unicode")
 (github "edicl" "drakma")
