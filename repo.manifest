@@ -71,6 +71,7 @@
 (github "fukamachi" "xsubseq")
 (github "gwkkwg" "trivial-backtrace")
 (github "hankhero" "cl-json")
+(github "hanshuebner" "cl-github-v3")
 (github "jdz" "rfc2388")
 (github "jech" "cl-yacc")
 (github "keithj" "deoxybyte-unix")
