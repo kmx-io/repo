@@ -28,6 +28,7 @@
 (github "cffi-posix" "cffi-errno")
 (github "cffi-posix" "cffi-fcntl")
 (github "cffi-posix" "cffi-socket")
+(github "cffi-posix" "cffi-stat")
 (github "cffi-posix" "cffi-stdlib")
 (github "cffi-posix" "cffi-unistd")
 (github "chaitanyagupta" "chronicity")
