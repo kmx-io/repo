@@ -2,6 +2,7 @@
 (in-package :repo-user)
 (github "3b" "3bmd")
 (github "AccelerationNet" "cl-inflector")
+(github "BnMcGn" "html-entities")
 (github "KDr2" "sb-fastcgi")
 (github "KDr2" "cl-fastcgi")
 (github "RailsOnLisp" "bootstrap")
