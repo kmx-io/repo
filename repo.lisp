@@ -102,7 +102,7 @@
 ;;  TODO: run-program for all lisp implementations
 #+sbcl
 (defun run-program (cmd &rest args)
-  (format t "~&$ ~A~{ ~A~}~%" cmd args)
+  (format t "~&$ ~S~{ ~S~}~%" cmd args)
   (let* ((out (make-string-output-stream))
          (err (make-string-output-stream))
          (process (sb-ext:run-program cmd args
@@ -114,11 +114,11 @@
     (close err)
     (let ((out (get-output-stream-string out))
           (err (get-output-stream-string err)))
-      (format t "~&~A~&" out)
-      (format t "~&~A~&" err)
+      (format t "~&~S~&" out)
+      (format t "~&~S~&" err)
       (unless (= 0 exit-code)
         (with-simple-restart (continue "Ignore command error")
-          (error "~&$ ~A~{ ~A~}~%~A" cmd args err)))
+          (error "~&$ ~S~{ ~S~}~%~S" cmd args err)))
       (values out err exit-code))))
 
 #+clisp
