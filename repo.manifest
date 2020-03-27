@@ -77,7 +77,7 @@
 (github "jdz" "rfc2388")
 (github "jech" "cl-yacc")
 (github "keithj" "deoxybyte-unix")
-(github "lowh" "cl-debug")
+(github "kmx-io" "cl-debug")
 (github "lowh" "exec-js")
 (github "marijnh" "parse-js")
 (github "melisgl" "named-readtables")
