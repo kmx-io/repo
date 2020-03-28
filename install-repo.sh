@@ -35,6 +35,9 @@ maybe_clone "${GITHUB}" 'fare' 'asdf'
 # Install Repo from Github
 
 maybe_clone "${GITHUB}" 'common-lisp-repo' 'repo'
+if ! [ -f "${REPO_DIR}/repo.manifest" ]; then
+    ( cd "${REPO_DIR}" && ln -s common-lisp-repo/repo/repo.manifest; )
+fi
 
 # Configure SBCL
 

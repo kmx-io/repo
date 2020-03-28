@@ -50,6 +50,8 @@ Install REPO from git :
   mkdir -p ~/common-lisp/common-lisp-repo
   cd ~/common-lisp/common-lisp-repo
   git clone https://github.com/common-lisp-repo/repo.git
+  cd ~/common-lisp
+  ln -s common-lisp-repo/repo/repo.manifest
 ```
 
 In your Common Lisp implementation startup file :
