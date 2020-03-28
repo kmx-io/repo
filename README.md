@@ -23,9 +23,9 @@ make
 Install REPO from git :
 
 ``` SH
-mkdir -p ~/common-lisp/thodg
-cd ~/common-lisp/thodg
-git clone https://github.com/thodg/repo.git
+mkdir -p ~/common-lisp/common-lisp-repo
+cd ~/common-lisp/common-lisp-repo
+git clone https://github.com/common-lisp-repo/repo.git
 make
 ```
 
@@ -33,7 +33,7 @@ In your Common Lisp implementation startup file :
 
 ``` Common-Lisp
 (load "~/common-lisp/fare/asdf/build/asdf")
-(load "~/common-lisp/thodg/repo/repo")
+(load "~/common-lisp/common-lisp-repo/repo/repo")
 (repo:boot)
 ```
 
