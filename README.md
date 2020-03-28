@@ -8,12 +8,27 @@ packages and keep them synced with upstream for development purposes.
 Each repo is installed in a subdirectory.
 Github repositories are installed in the user subdirectory.
 
+
 ## Quickstart
 
 ``` SH
-curl -O https://github.com/common-lisp-repo/repo/blob/master/install-repo.sh
-sh install-repo.sh
+  curl -O https://github.com/common-lisp-repo/repo/blob/master/install-repo.sh
+  sh install-repo.sh
 ```
+
+``` Common-Lisp
+  ;; install Thot
+  (repo:install :thot)
+
+  ;; udpate ASDF
+  (repo:update :asdf)
+```
+
+
+## Manifest
+
+https://github.com/common-lisp-repo/repo/blob/master/repo.manifest
+
 
 ## Installation
 
@@ -79,6 +94,7 @@ Other functions :
 
   (repo:clear-repos)                      ;; Clear all definitions
 ```
+
 
 ## Version informations
 
