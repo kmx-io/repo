@@ -20,7 +20,7 @@ Github repositories are installed in the user subdirectory.
   ;; install Thot
   (repo:install :thot)
 
-  ;; udpate ASDF
+  ;; update ASDF
   (repo:update :asdf)
 ```
 
