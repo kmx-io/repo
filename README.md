@@ -62,6 +62,8 @@ In your Common Lisp implementation startup file :
   (repo:boot)
 ```
 
+## Usage
+
 Repo integrates with ASDF :
 
 ``` Common-Lisp
