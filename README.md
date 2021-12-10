@@ -12,7 +12,7 @@ Github repositories are installed in the user subdirectory.
 ## Quickstart
 
 ``` SH
-  curl -O https://github.com/common-lisp-repo/repo/blob/master/install-repo.sh
+  curl -O https://github.com/kmx-io/repo/blob/master/install-repo.sh
   sh install-repo.sh
 ```
 
@@ -27,7 +27,7 @@ Github repositories are installed in the user subdirectory.
 
 ## Manifest
 
-https://github.com/common-lisp-repo/repo/blob/master/repo.manifest
+https://github.com/kmx-io/repo/blob/master/repo.manifest
 
 
 ## Installation
@@ -47,18 +47,18 @@ Install ASDF from git :
 Install REPO from git :
 
 ``` SH
-  mkdir -p ~/common-lisp/common-lisp-repo
-  cd ~/common-lisp/common-lisp-repo
-  git clone https://github.com/common-lisp-repo/repo.git
+  mkdir -p ~/common-lisp/kmx-io
+  cd ~/common-lisp/kmx-io
+  git clone https://github.com/kmx-io/repo.git
   cd ~/common-lisp
-  ln -s common-lisp-repo/repo/repo.manifest
+  ln -s kmx-io/repo/repo.manifest
 ```
 
 In your Common Lisp implementation startup file :
 
 ``` Common-Lisp
   (load "~/common-lisp/fare/asdf/build/asdf")
-  (load "~/common-lisp/common-lisp-repo/repo/repo")
+  (load "~/common-lisp/kmx-io/repo/repo")
   (repo:boot)
 ```
 
