@@ -167,6 +167,8 @@
 (github "trivial-gray-streams" "trivial-gray-streams")
 (github "usocket" "usocket")
 (github "vii" "teepeedee2")
+(github "vseloved" "cl-redis")
+(github "vseloved" "rutils")
 (github "zkat" "chanl")
 (git "http://git.kpe.io/cl-base64.git")
 (git "http://git.kpe.io/puri.git")
