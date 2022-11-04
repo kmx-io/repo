@@ -97,6 +97,7 @@
 (github "orthecreedence" "vom")
 (github "orthecreedence" "wookie")
 (github "pcostanza" "closer-mop")
+(github "phoe" "safe-read")
 (github "phmarek" "yason")
 (github "pmai" "md5")
 (github "robert-strandh" "Acclimation")
