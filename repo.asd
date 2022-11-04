@@ -1,4 +1,4 @@
-;; repo  -  common interface for version control systems
+;; repo - common interface for version control systems
 ;; Copyright 2016-2022 Thomas de Grivel <thodg@kmx.io>
 
 (defpackage :repo.system
