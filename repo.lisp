@@ -1,5 +1,15 @@
 ;; repo - common interface for version control systems
-;; Copyright 2016-2022 Thomas de Grivel <thodg@kmx.io>
+;; Copyright 2016-2022 kmx.io <contact@kmx.io>
+;;
+;; Permission is hereby granted to use this software granted
+;; the above copyright notice and this permission paragraph
+;; are included in all copies and substantial portions of this
+;; software.
+;;
+;; THIS SOFTWARE IS PROVIDED "AS-IS" WITHOUT ANY GUARANTEE OF
+;; PURPOSE AND PERFORMANCE. IN NO EVENT WHATSOEVER SHALL THE
+;; AUTHOR BE CONSIDERED LIABLE FOR THE USE AND PERFORMANCE OF
+;; THIS SOFTWARE.
 
 (in-package :common-lisp-user)
 
@@ -12,6 +22,7 @@
            #:git
            #:github
            #:install
+           #:kmx
            #:manifest
            #:*manifest*
            #:repo
@@ -336,7 +347,8 @@
         (push repo *repos*)
         repo)))
 
-;;  github repository class
+
+;; github repository class
 
 (defclass github-repo (git-repo) ())
 
@@ -382,7 +394,37 @@
           (push repo *repos*)
           repo))))
 
-;;  subversion command
+
+;; kmx repository class
+
+(defclass kmx-repo (git-repo) ())
+
+(defmethod print-object ((obj kmx-repo) stream)
+  (print-unreadable-object (obj stream :type t :identity t)
+    (with-slots (dir name local-dir packages) obj
+      (format stream "~A/~A ~S ~S" dir name local-dir packages))))
+
+(defun kmx-uri (dir name &optional tree package)
+  (str "kmx:" dir "/" name
+       (when tree "?") tree
+       (when package "#") package))
+
+(defun kmx-url (dir name)
+  (str "https://git.kmx.io/" dir "/" name ".git"))
+
+(defun kmx (dir name &rest initargs)
+  (let ((uri (kmx-uri dir name)))
+    (or (repo-by-uri uri)
+        (let ((repo (apply #'make-instance 'kmx-repo
+                           :dir dir :name name
+                           :uri uri
+                           :url (kmx-url dir name)
+                           initargs)))
+          (push repo *repos*)
+          repo))))
+
+
+;; subversion command
 
 (defvar *svn*
   #+unix (or (probe-file "/usr/bin/svn")

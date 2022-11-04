@@ -1,5 +1,20 @@
 # repo
 
+Copyright 2016-2022 kmx.io <contact@kmx.io>
+
+Permission is hereby granted to use this software granted
+the above copyright notice and this permission paragraph
+are included in all copies and substantial portions of this
+software.
+
+THIS SOFTWARE IS PROVIDED "AS-IS" WITHOUT ANY GUARANTEE OF
+PURPOSE AND PERFORMANCE. IN NO EVENT WHATSOEVER SHALL THE
+AUTHOR BE CONSIDERED LIABLE FOR THE USE AND PERFORMANCE OF
+THIS SOFTWARE.
+
+
+## Description
+
 Common interface for version control systems.
 
 Repo allows you to use source repositories directly as ASDF-installable
@@ -12,7 +27,7 @@ Github repositories are installed in the user subdirectory.
 ## Quickstart
 
 ``` SH
-  curl -O https://github.com/kmx-io/repo/blob/master/install-repo.sh
+  ftp https://git.kmx.io/kmx.io/repo/_blob/master/install-repo.sh
   sh install-repo.sh
 ```
 
@@ -27,7 +42,7 @@ Github repositories are installed in the user subdirectory.
 
 ## Manifest
 
-https://github.com/kmx-io/repo/blob/master/repo.manifest
+https://git.kmx.io/kmx.io/repo/_blob/master/repo.manifest
 
 
 ## Installation
@@ -47,18 +62,18 @@ Install ASDF from git :
 Install REPO from git :
 
 ``` SH
-  mkdir -p ~/common-lisp/kmx-io
-  cd ~/common-lisp/kmx-io
-  git clone https://github.com/kmx-io/repo.git
+  mkdir -p ~/common-lisp/kmx.io
+  cd ~/common-lisp/kmx.io
+  git clone https://git.kmx.io/kmx.io/repo.git
   cd ~/common-lisp
-  ln -s kmx-io/repo/repo.manifest
+  ln -s kmx.io/repo/repo.manifest
 ```
 
 In your Common Lisp implementation startup file :
 
 ``` Common-Lisp
   (load "~/common-lisp/fare/asdf/build/asdf")
-  (load "~/common-lisp/kmx-io/repo/repo")
+  (load "~/common-lisp/kmx.io/repo/repo")
   (repo:boot)
 ```
 
@@ -79,19 +94,19 @@ To update all repositories :
 Other functions :
 
 ``` Common-Lisp
-  (repo:repo "github:thodg/repo")         ;; Define repository by URI
+  (repo:repo "github:kmx-io/repo")        ;; Define repository by URI
 
   (repo:repo "thodg/repo")                ;; Find repository by dir/name
   (repo:repo :repo)                       ;; Find repository by name
 
   (setf repo:*repo-dir* "/tmp/repo-test") ;; Change installation directory
 
-  (repo:install "github:thodg/repo")      ;; Install repository by URI
-  (repo:install "thodg/repo")             ;; Install repository by dir/name
+  (repo:install "github:kmx-io/repo")     ;; Install repository by URI
+  (repo:install "kmx.io/repo")            ;; Install repository by dir/name
   (repo:install :repo)                    ;; Install repository by name
 
-  (repo:update "github:thodg/repo")       ;; Update repository by URI
-  (repo:update "thodg/repo")              ;; Update repository by dir/name
+  (repo:update "github:kmx-io/repo")      ;; Update repository by URI
+  (repo:update "kmx-io/repo")             ;; Update repository by dir/name
   (repo:update :repo)                     ;; Update repository by name
 
   repo:*repos*                            ;; List of defined repositories
