@@ -88,6 +88,7 @@
 (github "nallen05" "rw-ut")
 (github "nallen05" "trivial-email-utf-8")
 (github "next-browser" "next")
+(github "nightfly19" "cl-arrows")
 (github "nikodemus" "esrap")
 (github "orthecreedence" "blackbird")
 (github "orthecreedence" "cl-async"
