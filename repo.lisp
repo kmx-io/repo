@@ -24,8 +24,10 @@
            #:install
            #:kmx
            #:index
+           #:index!
            #:*index*
            #:repo
+           #:repo!
            #:*repo-dir*
            #:*repos*
            #:update))
@@ -469,15 +471,15 @@
                         (push repo *repos*)
                         repo))))))))))
 
-(defun repo-or-die (x)
+(defun repo! (x)
   (or (repo x)
       (error "unknown repository : ~S" x)))
 
 (defmethod $git-clone ((uri string))
-  ($git-clone (repo-or-die uri)))
+  ($git-clone (repo! uri)))
 
 (defmethod $git-pull ((uri string))
-  ($git-pull (repo-or-die uri)))
+  ($git-pull (repo! uri)))
 
 ;;  repos list
 
@@ -576,7 +578,7 @@
                    (do-handlers (rest handlers))))))
     (do-handlers *index-uri-handlers*)))
 
-(defun index-or-die (uri)
+(defun index! (uri)
   (or (index uri) (error "failed to load index ~S" uri)))
 
 ;;  install and update commands
@@ -586,8 +588,8 @@
     (maybe-reload-index *index*))
   (setq *repos* (index-repos *index*))
   (if (index-file-p x)
-      (install (index-or-die x))
-      (install (repo-or-die x))))
+      (install (index! x))
+      (install (repo! x))))
 
 (defmethod install ((x null))
   nil)
@@ -596,15 +598,15 @@
   (when *index*
     (maybe-reload-index *index*))
   (setq *repos* (index-repos *index*))
-  (install (repo-or-die x)))
+  (install (repo! x)))
 
 (defmethod update ((x string))
   (when *index*
     (maybe-reload-index *index*))
   (setq *repos* (index-repos *index*))
   (if (index-file-p x)
-      (update (index-or-die x))
-      (update (repo-or-die x))))
+      (update (index! x))
+      (update (repo! x))))
 
 (defmethod update ((x null))
   nil)
@@ -613,7 +615,7 @@
   (when *index*
     (maybe-reload-index *index*))
   (setq *repos* (index-repos *index*))
-  (update (repo-or-die x)))
+  (update (repo! x)))
 
 ;;  system-definition
 
