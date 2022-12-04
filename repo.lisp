@@ -21,11 +21,11 @@
            #:find-repo-by-package
            #:git
            #:github
-           #:install
-           #:kmx
            #:index
            #:index!
            #:*index*
+           #:install
+           #:kmx
            #:repo
            #:repo!
            #:*repo-dir*

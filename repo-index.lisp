@@ -187,7 +187,6 @@
 (kmx "thodg" "cl-unix-cybernetics")
 (kmx "thodg" "css-lexer")
 (kmx "thodg" "css-parser")
-(kmx "thodg" "fb")
 (kmx "thodg" "less-lexer")
 (kmx "thodg" "less-parser")
 (kmx "thodg" "positional")
