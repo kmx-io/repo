@@ -1,4 +1,4 @@
-;; repo - common interface for version control systems
+;; repo
 ;; Copyright 2016-2022 kmx.io <contact@kmx.io>
 ;;
 ;; Permission is hereby granted to use this software granted
