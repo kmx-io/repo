@@ -36,13 +36,21 @@ maybe_clone "${GITHUB}" 'fare' 'asdf'
 
 maybe_clone "${KMX}" 'kmx.io' 'repo'
 if ! [ -f "${REPO_DIR}/repo-index.lisp" ]; then
+    echo "Linking ${REPO_DIR}/repo-index.lisp"
     ( cd "${REPO_DIR}" && ln -s kmx.io/repo/repo-index.lisp; )
 fi
 
 # Configure SBCL
 
-{
-    echo "(load \"${REPO_DIR}/fare/asdf/build/asdf\")"
-    echo "(load \"${REPO_DIR}/kmx.io/repo/repo\")"
-    echo "(repo:boot)"
-} >> ~/.sbclrc
+if grep -q "(load \"${REPO_DIR}/fare/asdf/build/asdf\")" ~/.sbclrc &&
+   grep -q "(load \"${REPO_DIR}/kmx.io/repo/repo\")" ~/.sbclrc &&
+   grep -q "(repo:boot)" ~/.sbclrc; then
+    :
+else
+    echo Appending to ~/.sbclrc
+    {
+        echo "(load \"${REPO_DIR}/fare/asdf/build/asdf\")"
+        echo "(load \"${REPO_DIR}/kmx.io/repo/repo\")"
+        echo "(repo:boot)"
+    } >> ~/.sbclrc
+fi
