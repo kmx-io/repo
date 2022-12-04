@@ -23,12 +23,11 @@
            #:github
            #:install
            #:kmx
-           #:manifest
-           #:*manifest*
+           #:index
+           #:*index*
            #:repo
            #:*repo-dir*
            #:*repos*
-           #:svn
            #:update))
 
 (defpackage :repo-user
@@ -423,60 +422,6 @@
           (push repo *repos*)
           repo))))
 
-
-;; subversion command
-
-(defvar *svn*
-  #+unix (or (probe-file "/usr/bin/svn")
-             (probe-file "/usr/local/bin/svn")
-             (first-line (ignore-errors (sh "which svn")))))
-
-(defun $svn (&rest args)
-  (apply 'run-program *svn* args))
-
-;;  subversion repository class
-
-(defclass svn-repo (repo) ())
-
-(defgeneric $svn-checkout (repo))
-(defgeneric $svn-update (repo))
-
-(defmethod $svn-checkout ((repo svn-repo))
-  (let ((local (repo-local-dir repo))
-        (url (repo-url repo)))
-    (when (probe-dir local)
-      (error "svn checkout: not overwriting existing local directory~&~S" local))
-    (let ((parent (dirname local)))
-      (ensure-directories-exist (str parent "/") :verbose t)
-      ($svn "co" url (translate-home local))
-      nil)))
-
-(defmethod $svn-update ((repo svn-repo))
-  (let ((local (repo-local-dir repo)))
-    ($svn "up" (translate-home local))
-    nil))
-
-(defmethod install ((repo svn-repo))
-  (let ((local (repo-local-dir repo)))
-    (unless (probe-dir local)
-      ($svn-checkout repo))
-    (asdf::load-asd (repo-asd repo))))
-
-(defmethod update ((repo svn-repo))
-  (when (probe-dir (repo-local-dir repo))
-    ($svn-update repo)))
-
-(defun svn (url dir/name &rest initargs)
-  (or (repo-by-url url)
-      (let ((repo (apply #'make-instance 'svn-repo
-                         :dir (dirname dir/name)
-                         :name (basename dir/name)
-                         :url url :uri url
-                         :head (basename url)
-                         initargs)))
-        (push repo *repos*)
-        repo)))
-
 ;;  repo uri handler
 
 (defparameter *repo-uri-handlers*
@@ -542,140 +487,140 @@
 (defmethod update ((repos cons))
   (map nil 'update repos))
 
-;;  manifest
+;;  index
 
-(defvar *manifest*)
+(defvar *index*)
 
-(defclass manifest ()
+(defclass index ()
   ((write-date :initarg :write-date
-               :accessor manifest-write-date
+               :accessor index-write-date
                :type rational)
    (dir :initarg :dir
-        :reader manifest-dir
+        :reader index-dir
         :type string)
    (repos :initarg :repos
-          :accessor manifest-repos
+          :accessor index-repos
           :type list)))
 
-(defgeneric manifest-file (manifest))
-(defgeneric reload-manifest (manifest))
-(defgeneric maybe-reload-manifest (manifest))
+(defgeneric index-file (index))
+(defgeneric reload-index (index))
+(defgeneric maybe-reload-index (index))
 
-(defmethod print-object ((obj manifest) stream)
+(defmethod print-object ((obj index) stream)
   (print-unreadable-object (obj stream :type t :identity t)
     (format stream "~S ~A repos"
-            (manifest-file obj)
-            (length (manifest-repos obj)))))
+            (index-file obj)
+            (length (index-repos obj)))))
 
-(defmethod manifest-file ((manifest manifest))
-  (str (manifest-dir manifest) "/repo.manifest"))
+(defmethod index-file ((index index))
+  (str (index-dir index) "/repo-index.lisp"))
 
-(defun manifest-from-file (pathname)
+(defun index-from-file (pathname)
   (let ((*repos* nil)
         (write-date (file-write-date pathname)))
     (load pathname)
-    (make-instance 'manifest
+    (make-instance 'index
                    :write-date write-date
                    :dir (dirname pathname)
                    :repos *repos*)))
 
-(defmethod reload-manifest ((manifest manifest))
-  (let* ((pathname (manifest-file manifest))
+(defmethod reload-index ((index index))
+  (let* ((pathname (index-file index))
          (*repos* nil)
          (write-date (file-write-date pathname)))
     (load pathname)
-    (setf (manifest-write-date manifest) write-date
-          (manifest-repos manifest) *repos*))
-  manifest)
+    (setf (index-write-date index) write-date
+          (index-repos index) *repos*))
+  index)
 
-(defmethod maybe-reload-manifest ((manifest manifest))
-  (if (< (manifest-write-date manifest)
-         (file-write-date (manifest-file manifest)))
-      (reload-manifest manifest)
-      manifest))
+(defmethod maybe-reload-index ((index index))
+  (if (< (index-write-date index)
+         (file-write-date (index-file index)))
+      (reload-index index)
+      index))
 
-(defmethod install ((manifest manifest))
-  (let ((manifest (maybe-reload-manifest manifest)))
-    (let ((*repo-dir* (manifest-dir manifest))
-          (*repos* (manifest-repos manifest)))
+(defmethod install ((index index))
+  (let ((index (maybe-reload-index index)))
+    (let ((*repo-dir* (index-dir index))
+          (*repos* (index-repos index)))
       (install *repos*))))
 
-(defmethod update ((manifest manifest))
-  (let ((manifest (maybe-reload-manifest manifest)))
-    (let ((*repo-dir* (manifest-dir manifest))
-          (*repos* (manifest-repos manifest)))
+(defmethod update ((index index))
+  (let ((index (maybe-reload-index index)))
+    (let ((*repo-dir* (index-dir index))
+          (*repos* (index-repos index)))
       (update *repos*))))
 
-;;  manifest uri handlers
+;;  index uri handlers
 
-(defun manifest-file-p (x)
-  (or (string= "repo.manifest" x)
-      (string-ends-with "/repo.manifest" x)))
+(defun index-file-p (x)
+  (or (string= "repo-index.lisp" x)
+      (string-ends-with "/repo-index.lisp" x)))
 
-(defun local-manifest-uri-handler (x)
-  (let ((end (string-ends-with "/repo.manifest" x)))
+(defun local-index-uri-handler (x)
+  (let ((end (string-ends-with "/repo-index.lisp" x)))
     (when end
       (let* ((*repo-dir* (subseq x 0 end))
-             (manifest (str *repo-dir* "/repo.manifest")))
-        (when (probe-file manifest)
-          (manifest-from-file manifest))))))
+             (index (str *repo-dir* "/repo-index.lisp")))
+        (when (probe-file index)
+          (index-from-file index))))))
 
-(defvar *manifest-uri-handlers*
-  '(local-manifest-uri-handler))
+(defvar *index-uri-handlers*
+  '(local-index-uri-handler))
 
-(defun manifest (uri)
-  "Load manifest from uri"
+(defun index (uri)
+  "Load index from uri"
   (labels ((do-handlers (handlers)
              (unless (endp handlers)
                (or (funcall (first handlers) uri)
                    (do-handlers (rest handlers))))))
-    (do-handlers *manifest-uri-handlers*)))
+    (do-handlers *index-uri-handlers*)))
 
-(defun manifest-or-die (uri)
-  (or (manifest uri) (error "failed to load manifest ~S" uri)))
+(defun index-or-die (uri)
+  (or (index uri) (error "failed to load index ~S" uri)))
 
 ;;  install and update commands
 
 (defmethod install ((x string))
-  (when *manifest*
-    (maybe-reload-manifest *manifest*))
-  (setq *repos* (manifest-repos *manifest*))
-  (if (manifest-file-p x)
-      (install (manifest-or-die x))
+  (when *index*
+    (maybe-reload-index *index*))
+  (setq *repos* (index-repos *index*))
+  (if (index-file-p x)
+      (install (index-or-die x))
       (install (repo-or-die x))))
 
 (defmethod install ((x null))
   nil)
 
 (defmethod install ((x symbol))
-  (when *manifest*
-    (maybe-reload-manifest *manifest*))
-  (setq *repos* (manifest-repos *manifest*))
+  (when *index*
+    (maybe-reload-index *index*))
+  (setq *repos* (index-repos *index*))
   (install (repo-or-die x)))
 
 (defmethod update ((x string))
-  (when *manifest*
-    (maybe-reload-manifest *manifest*))
-  (setq *repos* (manifest-repos *manifest*))
-  (if (manifest-file-p x)
-      (update (manifest-or-die x))
+  (when *index*
+    (maybe-reload-index *index*))
+  (setq *repos* (index-repos *index*))
+  (if (index-file-p x)
+      (update (index-or-die x))
       (update (repo-or-die x))))
 
 (defmethod update ((x null))
   nil)
 
 (defmethod update ((x symbol))
-  (when *manifest*
-    (maybe-reload-manifest *manifest*))
-  (setq *repos* (manifest-repos *manifest*))
+  (when *index*
+    (maybe-reload-index *index*))
+  (setq *repos* (index-repos *index*))
   (update (repo-or-die x)))
 
 ;;  system-definition
 
 (defun sysdef (x)
-  (when *manifest*
-    (maybe-reload-manifest *manifest*))
-  (setq *repos* (manifest-repos *manifest*))
+  (when *index*
+    (maybe-reload-index *index*))
+  (setq *repos* (index-repos *index*))
   (let ((repo (or (find-repo-by-package x)
                   (repo x))))
     (when repo
@@ -685,9 +630,9 @@
 ;;  setup
 
 (defun boot ()
-  (let ((manifest-file (str *repo-dir* "/repo.manifest")))
-    (when (probe-file manifest-file)
-      (setq *manifest* (manifest manifest-file))
-      (setq *repos* (manifest-repos *manifest*))
+  (let ((index-file (str *repo-dir* "/repo-index.lisp")))
+    (when (probe-file index-file)
+      (setq *index* (index index-file))
+      (setq *repos* (index-repos *index*))
       (when (find-package :asdf)
         (pushnew 'sysdef asdf:*system-definition-search-functions*)))))

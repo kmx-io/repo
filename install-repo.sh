@@ -2,14 +2,13 @@
 set -e
 
 REPO_DIR=$HOME/common-lisp
-REPO_DIR=/tmp/common-lisp
 
 GITHUB='https://github.com/'
 KMX='https://git.kmx.io/'
 
 # detect gnu make
 
-if which gmake; then
+if which gmake > /dev/null; then
     MAKE=gmake
 else
     MAKE=make
@@ -36,8 +35,8 @@ maybe_clone "${GITHUB}" 'fare' 'asdf'
 # Install Repo from Github
 
 maybe_clone "${KMX}" 'kmx.io' 'repo'
-if ! [ -f "${REPO_DIR}/repo.manifest" ]; then
-    ( cd "${REPO_DIR}" && ln -s kmx.io/repo/repo.manifest; )
+if ! [ -f "${REPO_DIR}/repo-index.lisp" ]; then
+    ( cd "${REPO_DIR}" && ln -s kmx.io/repo/repo-index.lisp; )
 fi
 
 # Configure SBCL
