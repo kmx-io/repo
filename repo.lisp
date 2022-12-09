@@ -112,9 +112,8 @@
       (str (user-homedir-pathname) (subseq x 2))
       x))
 
-;;  shell commands
+;; shell commands
 
-;;  TODO: run-program for all lisp implementations
 #+sbcl
 (defun run-program (cmd &rest args)
   (format t "~&$ ~S~{ ~S~}~%" cmd args)
@@ -179,25 +178,35 @@
         (str "~/" (sh-quote (subseq x home)))
         (sh-quote x))))
 
-;;  property list functions
+;; property list functions
 
 (defun plist-merge (to add &rest more-lists)
   (cond
-    ((endp add) (if (endp more-lists)
-                    to
-                    (plist-merge to (first more-lists) (rest more-lists))))
-    ((endp (rest add)) (error "Incomplete property list"))
-    (t (setf (getf to (first add)) (first (rest add)))
-       (plist-merge to (rest (rest add))))))
+    ((endp add)
+     (if (endp more-lists)
+         to
+         (plist-merge to
+                      (first more-lists)
+                      (rest more-lists))))
+    ((endp (rest add))
+     (error "Incomplete property list"))
+    (t
+     (setf (getf to (first add))
+           (first (rest add)))
+     (plist-merge to (rest (rest add))))))
 
-;;  generic functions
+;; classes
 
-(defgeneric install (obj))
-(defgeneric update (obj))
-
-;;  repository base class
-
-(defvar *repos* ())
+(defclass index ()
+  ((write-date :initarg :write-date
+               :accessor index-write-date
+               :type rational)
+   (dir :initarg :dir
+        :reader index-dir
+        :type string)
+   (repos :initarg :repos
+          :accessor index-repos
+          :type list)))
 
 (defclass repo ()
   ((dir :initarg :dir
@@ -219,7 +228,25 @@
               :type string)
    (packages :initarg :packages
              :reader repo-packages
-             :type list)))
+             :type list)
+   (index :initarg :index
+          :reader repo-index
+          :type index)))
+
+(defclass git-repo (repo) ())
+
+(defclass github-repo (git-repo) ())
+
+(defclass kmx-repo (git-repo) ())
+
+;; generic functions
+
+(defgeneric install (obj))
+(defgeneric update (obj))
+
+;; repo
+
+(defvar *repos* ())
 
 (defgeneric repo-asd (repo &optional package))
 (defgeneric repo-dir/name (repo))
@@ -233,14 +260,6 @@
       (format stream "~A/~A ~S ~S ~S" dir name uri local-dir
               (when (slot-boundp obj 'packages)
                 packages)))))
-
-(defmethod initialize-instance :after ((repo repo) &rest initargs)
-  (declare (ignore initargs))
-  (with-slots (dir name packages) repo
-    (setf (slot-value repo 'local-dir)
-          (format nil "~A/~A/~A" *repo-dir* dir name))
-    (unless (slot-boundp repo 'packages)
-      (setf packages (list name)))))
 
 (defmethod repo-asd ((repo repo) &optional
                                    (package (first (repo-packages repo))))
@@ -267,19 +286,17 @@
 (defun repo-by-uri (uri)
   (find uri *repos* :key #'repo-uri :test #'string=))
 
-;;  git command
+;; git
 
 (defvar *git*
-  #+unix (or (probe-file "/usr/bin/git")
-             (probe-file "/usr/local/bin/git")
-             (first-line (sh "which git"))))
+  (or (probe-file "/usr/bin/git")
+      (probe-file "/usr/local/bin/git")
+      (first-line (sh "which git"))))
 
 (defun $git (&rest args)
   (apply 'run-program *git* args))
 
-;;  git repository class
-
-(defclass git-repo (repo) ())
+;; git repo
 
 (defgeneric $git-checkout (repo))
 (defgeneric $git-clone (repo))
@@ -353,10 +370,7 @@
         (push repo *repos*)
         repo)))
 
-
-;; github repository class
-
-(defclass github-repo (git-repo) ())
+;; github repo
 
 (defmethod print-object ((obj github-repo) stream)
   (print-unreadable-object (obj stream :type t :identity t)
@@ -400,10 +414,7 @@
           (push repo *repos*)
           repo))))
 
-
-;; kmx repository class
-
-(defclass kmx-repo (git-repo) ())
+;; kmx repo
 
 (defmethod print-object ((obj kmx-repo) stream)
   (print-unreadable-object (obj stream :type t :identity t)
@@ -429,7 +440,7 @@
           (push repo *repos*)
           repo))))
 
-;;  repo uri handler
+;; repo uri handler
 
 (defparameter *repo-uri-handlers*
   '(github-repo-uri-handler
@@ -486,7 +497,7 @@
 (defmethod $git-pull ((uri string))
   ($git-pull (repo! uri)))
 
-;;  repos list
+;; repos list
 
 (defmethod install ((repos cons))
   (map nil 'install repos))
@@ -494,20 +505,9 @@
 (defmethod update ((repos cons))
   (map nil 'update repos))
 
-;;  index
+;; index
 
 (defvar *index*)
-
-(defclass index ()
-  ((write-date :initarg :write-date
-               :accessor index-write-date
-               :type rational)
-   (dir :initarg :dir
-        :reader index-dir
-        :type string)
-   (repos :initarg :repos
-          :accessor index-repos
-          :type list)))
 
 (defgeneric index-file (index))
 (defgeneric reload-index (index))
@@ -558,7 +558,7 @@
           (*repos* (index-repos index)))
       (update *repos*))))
 
-;;  index uri handlers
+;; index uri handlers
 
 (defun index-file-p (x)
   (or (string= "repo-index.lisp" x)
@@ -585,6 +585,16 @@
 
 (defun index! (uri)
   (or (index uri) (error "failed to load index ~S" uri)))
+
+;; repo
+
+(defmethod initialize-instance :after ((repo repo) &rest initargs)
+  (declare (ignore initargs))
+  (with-slots (dir index name packages) repo
+    (setf (slot-value repo 'local-dir)
+          (format nil "~A/~A/~A" (index-dir index) dir name))
+    (unless (slot-boundp repo 'packages)
+      (setf packages (list name)))))
 
 ;;  install and update commands
 
