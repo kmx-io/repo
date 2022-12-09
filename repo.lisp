@@ -17,6 +17,7 @@
   (:use :common-lisp)
   (:export #:boot
            #:clear-repos
+           #:*dir*
            #:find-repo
            #:find-repo-by-package
            #:git
@@ -28,8 +29,11 @@
            #:kmx
            #:repo
            #:repo!
-           #:*repo-dir*
            #:*repos*
+           #:run-program
+           #:sh
+           #:sh-quote
+           #:str
            #:update))
 
 (defpackage :repo-user
@@ -37,9 +41,11 @@
 
 (in-package :repo)
 
-(defvar *repo-dir* "~/common-lisp")
+;; config
 
-;;  string functions
+(defvar *dir* "~/common-lisp")
+
+;; string functions
 
 (defvar *spaces* (coerce '(#\Space #\Tab) 'string))
 
@@ -141,7 +147,6 @@
     (format t "~&~A~&" out)
     (values out "" 0)))
 
-#-windows
 (defun sh (&rest parts)
   (run-program "/bin/sh" "-c" (str parts)))
 
@@ -543,13 +548,13 @@
 
 (defmethod install ((index index))
   (let ((index (maybe-reload-index index)))
-    (let ((*repo-dir* (index-dir index))
+    (let ((*dir* (index-dir index))
           (*repos* (index-repos index)))
       (install *repos*))))
 
 (defmethod update ((index index))
   (let ((index (maybe-reload-index index)))
-    (let ((*repo-dir* (index-dir index))
+    (let ((*dir* (index-dir index))
           (*repos* (index-repos index)))
       (update *repos*))))
 
@@ -562,8 +567,8 @@
 (defun local-index-uri-handler (x)
   (let ((end (string-ends-with "/repo-index.lisp" x)))
     (when end
-      (let* ((*repo-dir* (subseq x 0 end))
-             (index (str *repo-dir* "/repo-index.lisp")))
+      (let* ((*dir* (subseq x 0 end))
+             (index (str *dir* "/repo-index.lisp")))
         (when (probe-file index)
           (index-from-file index))))))
 
@@ -617,9 +622,10 @@
   (setq *repos* (index-repos *index*))
   (update (repo! x)))
 
-;;  system-definition
+;; system-definition
 
-(defun sysdef (x)
+(defun sysdef (x sysdef-file)
+  (declare (type function sysdef-file))
   (when *index*
     (maybe-reload-index *index*))
   (setq *repos* (index-repos *index*))
@@ -627,14 +633,20 @@
                   (repo x))))
     (when repo
       (install repo)
-      (pathname (repo-asd repo x)))))
+      (pathname (funcall sysdef-file repo x)))))
 
-;;  setup
+(defun sysdef-asdf (x)
+  (sysdef x #'repo-asd))
+
+;; start repo : load index and link with ASDF
 
 (defun boot ()
-  (let ((index-file (str *repo-dir* "/repo-index.lisp")))
+  (let ((index-file (str *dir* "/repo-index.lisp")))
     (when (probe-file index-file)
       (setq *index* (index index-file))
       (setq *repos* (index-repos *index*))
       (when (find-package :asdf)
-        (pushnew 'sysdef asdf:*system-definition-search-functions*)))))
+        (pushnew 'sysdef-asdf
+                 (symbol-value
+                  (intern "*SYSTEM-DEFINITION-SEARCH-FUNCTIONS*"
+                          :asdf)))))))
