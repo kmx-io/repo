@@ -17,7 +17,6 @@
   (:use :common-lisp)
   (:export #:boot
            #:clear-repos
-           #:*dir*
            #:find-repo
            #:find-repo-by-package
            #:git
@@ -25,6 +24,7 @@
            #:index
            #:index!
            #:*index*
+           #:index-repos
            #:install
            #:kmx
            #:repo
@@ -34,6 +34,7 @@
            #:sh
            #:sh-quote
            #:str
+           #:sysdef
            #:update))
 
 (defpackage :repo-user
@@ -41,9 +42,11 @@
 
 (in-package :repo)
 
-;; config
+;; variables
 
-(defvar *dir* "~/common-lisp")
+(defvar *index*)
+
+(defvar *repos* ())
 
 ;; string functions
 
@@ -241,12 +244,10 @@
 
 ;; generic functions
 
-(defgeneric install (obj))
-(defgeneric update (obj))
+(defgeneric install (repo))
+(defgeneric update (repo))
 
 ;; repo
-
-(defvar *repos* ())
 
 (defgeneric repo-asd (repo &optional package))
 (defgeneric repo-dir/name (repo))
@@ -263,11 +264,12 @@
 
 (defmethod repo-asd ((repo repo) &optional
                                    (package (first (repo-packages repo))))
-  (namestring
-   (first
-    (directory
-     (str (translate-home (repo-local-dir repo)) "/**/"
-          (string-downcase package) ".asd")))))
+  (let ((found (first
+                (directory
+                 (str (translate-home (repo-local-dir repo)) "/**/"
+                      (string-downcase package) ".asd")))))
+    (when found
+      (namestring found))))
 
 (defmethod repo-dir/name ((repo repo))
   (str (repo-dir repo) "/" (repo-name repo)))
@@ -348,7 +350,7 @@
   (when (probe-dir (repo-local-dir repo))
     ($git-pull repo)))
 
-(defun git-repo-uri-handler (uri)
+(defun git-repo-uri-handler (uri &key dir &allow-other-keys)
   (let ((uri (first (string-split "#" uri))))
     (let ((start (or (string-starts-with "git://" uri)
                      (string-starts-with "http://" uri)
@@ -357,16 +359,21 @@
         (let* ((dot (search ".git" uri :from-end t))
                (slash (position #\/ uri :end dot :from-end t))
                (slash2 (position #\/ uri :end slash :from-end t))
-               (dir (subseq uri (1+ slash2) slash))
+               (dir (or dir (subseq uri (1+ slash2) slash)))
                (name (subseq uri (1+ slash) dot)))
-          `(git-repo :dir ,dir :name ,name
+          `(git-repo :dir ,dir
+                     :index ,*index*
+                     :name ,name
                      :uri ,uri
                      :url ,uri))))))
 
 (defun git (url &rest initargs)
   (or (repo-by-url url)
       (let ((repo (apply #'make-instance
-                         (append (git-repo-uri-handler url) initargs))))
+                         (append (apply #'git-repo-uri-handler
+                                        url
+                                        initargs)
+                                 initargs))))
         (push repo *repos*)
         repo)))
 
@@ -385,7 +392,7 @@
 (defun github-url (user name)
   (str "https://github.com/" user "/" name ".git"))
 
-(defun github-repo-uri-handler (uri)
+(defun github-repo-uri-handler (uri &key dir &allow-other-keys)
   (let ((uri (first (string-split "#" uri))))
     (let ((start (or (string-starts-with "github:" uri)
                      (string-starts-with "git://github.com/" uri)
@@ -399,15 +406,19 @@
                         (string-ends-with "/" uri)))
                (user (subseq uri start slash))
                (name (subseq uri (1+ slash) dot)))
-          `(github-repo :dir ,user :name ,name
+          `(github-repo :dir ,(or dir user)
+                        :index ,*index*
+                        :name ,name
                         :uri ,(github-uri user name)
                         :url ,(github-url user name)))))))
 
-(defun github (user name &rest initargs)
+(defun github (user name &rest initargs &key dir &allow-other-keys)
   (let ((uri (github-uri user name)))
     (or (repo-by-uri uri)
         (let ((repo (apply #'make-instance 'github-repo
-                           :dir user :name name
+                           :dir (or dir user)
+                           :index *index*
+                           :name name
                            :uri uri
                            :url (github-url user name)
                            initargs)))
@@ -433,7 +444,9 @@
   (let ((uri (kmx-uri dir name)))
     (or (repo-by-uri uri)
         (let ((repo (apply #'make-instance 'kmx-repo
-                           :dir dir :name name
+                           :dir dir
+                           :index *index*
+                           :name name
                            :uri uri
                            :url (kmx-url dir name)
                            initargs)))
@@ -507,8 +520,6 @@
 
 ;; index
 
-(defvar *index*)
-
 (defgeneric index-file (index))
 (defgeneric reload-index (index))
 (defgeneric maybe-reload-index (index))
@@ -523,13 +534,15 @@
   (str (index-dir index) "/repo-index.lisp"))
 
 (defun index-from-file (pathname)
-  (let ((*repos* nil)
-        (write-date (file-write-date pathname)))
+  (let* ((*repos* nil)
+         (write-date (file-write-date pathname))
+         (*index* (make-instance 'index
+                                 :write-date write-date
+                                 :dir (dirname pathname)
+                                 :repos *repos*)))
     (load pathname)
-    (make-instance 'index
-                   :write-date write-date
-                   :dir (dirname pathname)
-                   :repos *repos*)))
+    (setf (index-repos *index*) *repos*)
+    *index*))
 
 (defmethod reload-index ((index index))
   (let* ((pathname (index-file index))
@@ -548,14 +561,12 @@
 
 (defmethod install ((index index))
   (let ((index (maybe-reload-index index)))
-    (let ((*dir* (index-dir index))
-          (*repos* (index-repos index)))
+    (let ((*repos* (index-repos index)))
       (install *repos*))))
 
 (defmethod update ((index index))
   (let ((index (maybe-reload-index index)))
-    (let ((*dir* (index-dir index))
-          (*repos* (index-repos index)))
+    (let ((*repos* (index-repos index)))
       (update *repos*))))
 
 ;; index uri handlers
@@ -567,8 +578,8 @@
 (defun local-index-uri-handler (x)
   (let ((end (string-ends-with "/repo-index.lisp" x)))
     (when end
-      (let* ((*dir* (subseq x 0 end))
-             (index (str *dir* "/repo-index.lisp")))
+      (let* ((dir (subseq x 0 end))
+             (index (str dir "/repo-index.lisp")))
         (when (probe-file index)
           (index-from-file index))))))
 
@@ -600,8 +611,8 @@
 
 (defmethod install ((x string))
   (when *index*
-    (maybe-reload-index *index*))
-  (setq *repos* (index-repos *index*))
+    (maybe-reload-index *index*)
+    (setq *repos* (index-repos *index*)))
   (if (index-file-p x)
       (install (index! x))
       (install (repo! x))))
@@ -611,14 +622,14 @@
 
 (defmethod install ((x symbol))
   (when *index*
-    (maybe-reload-index *index*))
-  (setq *repos* (index-repos *index*))
+    (maybe-reload-index *index*)
+    (setq *repos* (index-repos *index*)))
   (install (repo! x)))
 
 (defmethod update ((x string))
   (when *index*
-    (maybe-reload-index *index*))
-  (setq *repos* (index-repos *index*))
+    (maybe-reload-index *index*)
+    (setq *repos* (index-repos *index*)))
   (if (index-file-p x)
       (update (index! x))
       (update (repo! x))))
@@ -628,8 +639,8 @@
 
 (defmethod update ((x symbol))
   (when *index*
-    (maybe-reload-index *index*))
-  (setq *repos* (index-repos *index*))
+    (maybe-reload-index *index*)
+    (setq *repos* (index-repos *index*)))
   (update (repo! x)))
 
 ;; system-definition
@@ -637,8 +648,8 @@
 (defun sysdef (x sysdef-file)
   (declare (type function sysdef-file))
   (when *index*
-    (maybe-reload-index *index*))
-  (setq *repos* (index-repos *index*))
+    (maybe-reload-index *index*)
+    (setq *repos* (index-repos *index*)))
   (let ((repo (or (find-repo-by-package x)
                   (repo x))))
     (when repo
@@ -650,8 +661,8 @@
 
 ;; start repo : load index and link with ASDF
 
-(defun boot ()
-  (let ((index-file (str *dir* "/repo-index.lisp")))
+(defun boot (&optional (dir "~/common-lisp"))
+  (let ((index-file (str dir "/repo-index.lisp")))
     (when (probe-file index-file)
       (setq *index* (index index-file))
       (setq *repos* (index-repos *index*))
