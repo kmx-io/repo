@@ -27,6 +27,7 @@
            #:index-repos
            #:install
            #:kmx
+           #:*log-commands*
            #:repo
            #:repo!
            #:*repos*
@@ -45,6 +46,8 @@
 ;; variables
 
 (defvar *index*)
+
+(defvar *log-commands* t)
 
 (defvar *repos* ())
 
@@ -119,28 +122,32 @@
 
 #+sbcl
 (defun run-program (cmd &rest args)
-  (format t "~&$ ~S~{ ~S~}~%" cmd args)
+  (when *log-commands*
+    (format t "~&$ ~S~{ ~S~}~%" cmd args)
+    (force-output))
   (let* ((out (make-string-output-stream))
-         (err (make-string-output-stream))
-         (process (sb-ext:run-program cmd args
-                                      :output out
-                                      :error err
-                                      :external-format :utf-8))
-         (exit-code (sb-ext:process-exit-code process)))
-    (close out)
-    (close err)
-    (let ((out (get-output-stream-string out))
-          (err (get-output-stream-string err)))
-      (format t "~&~S~&" out)
-      (format t "~&~S~&" err)
-      (unless (= 0 exit-code)
-        (with-simple-restart (continue "Ignore command error")
-          (error "~&$ ~S~{ ~S~}~%~S" cmd args err)))
-      (values out err exit-code))))
+         (err (make-string-output-stream)))
+    (let* ((process (sb-ext:run-program cmd args
+                                        :output out
+                                        :error err
+                                        :external-format :utf-8))
+           (exit-code (sb-ext:process-exit-code process)))
+      (close out)
+      (close err)
+      (let ((out (get-output-stream-string out))
+            (err (get-output-stream-string err)))
+        (format t "~&~S~&" out)
+        (format t "~&~S~&" err)
+        (unless (= 0 exit-code)
+          (with-simple-restart (continue "Ignore command error")
+            (error "~&$ ~S~{ ~S~}~%~S" cmd args err)))
+        (values out err exit-code)))))
 
 #+clisp
 (defun run-program (cmd &rest args)
-  (format t "~&$ ~A~{ ~A~}~%" cmd args)
+  (when *log-commands*
+    (format t "~&$ ~A~{ ~A~}~%" cmd args)
+    (force-output))
   (let* ((buf (make-array '(4096) :element-type 'character))
          (stream (ext:run-program cmd :arguments args
                                   :output :stream :wait t))
@@ -150,7 +157,12 @@
     (values out "" 0)))
 
 (defun sh (&rest parts)
-  (run-program "/bin/sh" "-c" (str parts)))
+  (let ((cmd (str parts)))
+    (when *log-commands*
+      (format t "~&$ ~A~%" cmd)
+      (force-output))
+    (let ((*log-commands* nil))
+      (run-program "/bin/sh" "-c" cmd))))
 
 (defvar *sh-unquoted-chars*
   "+,-./0123456789:=ABCDEFGHIJKLMNOPQRSTUVWXYZ^_abcdefghijklmnopqrstuvwxyz")
