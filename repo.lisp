@@ -265,6 +265,7 @@
 (defgeneric repo-dir/name (repo))
 (defgeneric repo-head (repo))
 (defgeneric repo-head-default (repo))
+(defgeneric repo-local-file (repo &rest parts))
 (defgeneric repo-package-p (x repo))
 
 (defmethod print-object ((obj repo) stream)
@@ -283,6 +284,12 @@
     (when found
       (namestring found))))
 
+(defun repo-by-url (url)
+  (find url *repos* :key #'repo-url :test #'string=))
+
+(defun repo-by-uri (uri)
+  (find uri *repos* :key #'repo-uri :test #'string=))
+
 (defmethod repo-dir/name ((repo repo))
   (str (repo-dir repo) "/" (repo-name repo)))
 
@@ -291,14 +298,11 @@
       (slot-value repo 'head)
       (repo-head-default repo)))
 
+(defmethod repo-local-file ((repo repo) &rest parts)
+  (str (repo-local-dir repo) "/" parts))
+
 (defmethod repo-package-p (x repo)
   (find x (repo-packages repo) :test #'string-equal))
-
-(defun repo-by-url (url)
-  (find url *repos* :key #'repo-url :test #'string=))
-
-(defun repo-by-uri (uri)
-  (find uri *repos* :key #'repo-uri :test #'string=))
 
 ;; git
 
